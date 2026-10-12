@@ -1,0 +1,138 @@
+[package]
+name = "anima"
+# 有第二个 bin（prep-voice-ref）之后 `cargo run` 就不知道该跑哪个了，
+# Tauri 的 dev 命令正是 `cargo run` —— 表现是应用直接起不来。
+# 这一行把默认定死在应用本体上
+default-run = "anima"
+version = "0.43.42"
+description = "Anima —— AI 语音数字人助手"
+authors = ["Anima"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+# Tauri v2 约定：业务逻辑放 lib，main.rs 只是薄壳（便于将来移植到移动端）
+name = "anima_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# 超长视频按提示词里的时间码拆段（long_video.rs）。lock 里本来就有（间接依赖），不新增下载
+regex = "1.13"
+# jobs.json 的跨进程文件锁（flock）。app 和 anima-mcp 是两个进程，
+# 进程内 Mutex 挡不住它们互相盖掉任务记录
+libc = "0.2"
+# macos-private-api：窗口半透明在 macOS 上需要它（Tauri 的 allowlist 会校验
+# Cargo feature 与 tauri.conf.json 的 macOSPrivateApi 一致，不加就构建失败）。
+# 注意：它用的是私有 API，上架 App Store 会被拒 —— 个人原型无所谓
+tauri = { version = "2", features = ["protocol-asset", "macos-private-api", "tray-icon"] }
+tauri-plugin-opener = "2"
+# 同一时间只跑一个 Anima（只在打包版生效，理由见 lib.rs 的 run()）
+tauri-plugin-single-instance = "2"
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# 异步运行时与流
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "process", "io-util"] }
+tokio-util = "0.7"
+futures-util = "0.3"
+async-trait = "0.1"
+
+# HTTP / 流式请求
+reqwest = { version = "0.13", default-features = false, features = [
+  "json",
+  "stream",
+  "rustls",
+  "multipart",
+] }
+
+# 错误处理与日志
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# API Key 存储（macOS Keychain）
+keyring = { version = "3", features = ["apple-native"] }
+
+bytes = "1"
+uuid = { version = "1", features = ["v4"] }
+
+# 音频采集与播放（阶段二语音链路）
+cpal = "0.15"
+# wav 是接入本地 TTS 引擎之后加的：Kokoro / CosyVoice / GPT-SoVITS 都返回 WAV，
+# 而当初只接 Edge（mp3）时没开这个特性 —— 结果 Decoder 连探测都探不出 WAV，
+# 表现是"文字有了但听不到声音"。默认特性仍然关着，只按需开这两个解码器。
+rodio = { version = "0.20", default-features = false, features = ["mp3", "wav", "flac", "vorbis", "minimp3"] }
+
+# edge-tts 需要 WebSocket + SHA256（Sec-MS-GEC 令牌）
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+# **必须显式依赖 rustls 并在启动时选一个加密后端。**
+#
+# 依赖树里同时有 ring 和 aws-lc-rs（reqwest 和 tokio-tungstenite 各带一个），
+# rustls 0.23 在这种情况下无法自动决定，**第一次用 TLS 时直接 panic**。
+# 而 panic 发生在 tokio 工作线程里 —— tracing 日志一个字都没有，
+# 表现是"她动了动手，然后什么都没有"。见 lib.rs 的 install_crypto_provider
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+sha2 = "0.10"
+
+# STT：whisper.cpp 绑定，metal feature 开启 Apple GPU 加速
+whisper-rs = { version = "0.14", default-features = false, features = ["metal"] }
+
+# 调试时把采集到的音频落成 wav 便于人工核对
+hound = "3.5"
+rusqlite = { version = "0.40.1", features = ["bundled"] }
+lancedb = "0.33"
+arrow-array = "58"
+arrow-schema = "58"
+tracing-appender = "0.2.5"
+rmcp = { version = "2.2.0", default-features = false, features = ["client", "transport-child-process", "transport-streamable-http-client-reqwest", "which-command"] }
+base64 = "0.23.0"
+serde_yaml = "0.9.34"
+pinyin = { version = "0.11.0", default-features = false, features = ["plain"] }
+dirs = "6.0.0"
+ort = { version = "2.0.0-rc.13", default-features = false, features = ["download-binaries", "tls-rustls"] }
+urlencoding = "2.1.3"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+portable-pty = "0.8"
+lsp-types = "0.95"
+ab_glyph = "0.2.32"
+
+[dev-dependencies]
+temp-env = "0.3.6"
+tempfile = "3.27.0"
+# 集成测试要起一个 mock HTTP 服务，需要 net / io-util（主 crate 用不到）
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time"] }
+
+[features]
+# 默认不开启任何 feature；custom-protocol 由 tauri build 注入
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+
+# **不要 `panic = "abort"`。**
+#
+# 2026-09-18 实测：组装页切画面时崩了两次，`abort` 让**任何一个后台线程的
+# panic 直接带走整个应用** —— 包括媒体协议那条 `std::thread::spawn`
+# 出来的读文件线程。那条路只是给 webview 回一张图，它出错不该让用户
+# 正在做的整集组装一起没。
+#
+# unwind 之后，Tauri 的 command 层和我们自己的 `catch_unwind` 能把 panic
+# 包在原地，应用继续跑。代价是二进制大一点点和一点点性能，都无所谓。
+panic = "unwind"
+
+# **只剥调试信息，保留符号名。**
+#
+# `strip = true` 会把函数名也剥掉，于是崩溃报告里整个调用栈全是
+# 一串裸 `anima` —— **每一次 release 崩溃都无法定位**。
+# 2026-09-18 那两次就是这样：知道是 panic，不知道是哪儿。
+#
+# `"debuginfo"` 保留符号表，`atos` 就能把地址翻回函数名。
+# 体积代价实测只有几 MB（96 MB → 见 CHANGELOG）。
+strip = "debuginfo"

@@ -1,0 +1,61 @@
+/* Prompt Mention Editor */
+.prompt-mention-editor {
+  position: relative;
+  outline: none;
+  min-height: 80px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #fff;
+  font-size: 14px;
+}
+
+.prompt-mention-editor:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  display: block;
+}
+
+/* Mention Chip / Badge */
+.mention-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 6px 0 4px;
+  margin: 0 2px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: default;
+  user-select: all;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.mention-chip:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mention-chip > img {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.mention-chip-label {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-weight: 500;
+}

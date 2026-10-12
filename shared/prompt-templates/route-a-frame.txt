@@ -1,0 +1,6 @@
+{STYLE}
+{CAMERA}。{SCENE}。{VISUAL}
+站位：{BLOCKING}
+{ITEMS}
+光影：{LIGHTING}
+画面中不出现字幕、文字和水印。

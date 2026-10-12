@@ -1,0 +1,46 @@
+Anima — License / 许可
+Copyright (c) 2026 SONG LIU
+
+Required Notice: Copyright (c) 2026 SONG LIU (https://github.com/eliliu911/Anima)
+
+Anima is dual-licensed.
+
+1. Noncommercial use — PolyForm Noncommercial License 1.0.0
+   (full text: LICENSES/PolyForm-Noncommercial-1.0.0.txt).
+   Personal use, study, research, hobby projects and use by noncommercial
+   organizations are free: you may use, modify and share the software under
+   that license.
+
+2. Commercial use — requires a separate commercial license from SONG LIU.
+   Open an issue at https://github.com/eliliu911/Anima/issues to ask.
+
+Exceptions (these are NOT covered by the dual license above):
+
+- Files adapted from DramaClaw (ClaymoreLab) remain under the Elastic License
+  2.0 (full text: LICENSES/ELv2.txt). They are listed in NOTICE and each carries
+  its own source notice in the file header.
+- Third-party skills under skills/ keep the license in their own directory
+  (MIT or Apache-2.0).
+- Model weights are not part of this repository; each model you download
+  follows its own license (some are noncommercial only).
+
+----------------------------------------------------------------------------
+
+Anima —— 许可说明
+著作权所有 (c) 2026 SONG LIU
+
+本项目采用双许可：
+
+1. 非商业使用：PolyForm Noncommercial License 1.0.0
+   （全文见 LICENSES/PolyForm-Noncommercial-1.0.0.txt）。
+   个人使用、学习、研究、业余项目、非营利机构使用免费，可按该许可使用、修改、分享。
+
+2. 商业使用：需另行取得 SONG LIU 的商业授权。
+   请在 https://github.com/eliliu911/Anima/issues 提 issue 联系。
+
+例外（不适用上面的双许可）：
+
+- 改写自 DramaClaw（ClaymoreLab）的文件仍按 Elastic License 2.0 授权
+  （全文见 LICENSES/ELv2.txt），清单见 NOTICE，每个文件头都注明了出处。
+- skills/ 下的第三方技能按各自目录里的许可（MIT 或 Apache-2.0）。
+- 模型权重不在本仓库，下载的每个模型遵循各自的许可（有些禁止商用）。

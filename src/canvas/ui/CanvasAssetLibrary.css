@@ -1,0 +1,64 @@
+/* 画布左侧资产库。
+   浮在画布上，不占布局 —— 画布本身要保持满屏可用。 */
+.canvas-asset-library {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 8;
+  width: 232px;
+  max-height: calc(100% - 96px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--studio-bg-inset, #17171a) 92%, transparent);
+  border: 1px solid var(--studio-border-subtle, #2a2a2e);
+  backdrop-filter: blur(12px);
+  color: var(--studio-text, #e6e6e6);
+  font-size: 12px;
+}
+.canvas-asset-library header { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.canvas-asset-library header button { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; }
+.canvas-asset-library header small { color: var(--studio-text-muted, #8b8b90); font-size: 10px; }
+.canvas-asset-library input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--studio-bg, #0f0f11);
+  border: 1px solid var(--studio-border-subtle, #2a2a2e);
+  color: inherit;
+}
+.canvas-asset-library-body { overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+.canvas-asset-library-body p { color: var(--studio-text-muted, #8b8b90); padding: 8px 2px; }
+.canvas-asset-library-body h4 {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; font-weight: 600; letter-spacing: .04em;
+  color: var(--studio-text-muted, #8b8b90);
+  margin: 8px 2px 3px;
+}
+.canvas-asset-row {
+  display: flex; align-items: center; gap: 7px;
+  width: 100%; padding: 5px 6px; border-radius: 7px; text-align: left;
+}
+.canvas-asset-row:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.canvas-asset-row img { width: 28px; height: 28px; object-fit: cover; border-radius: 5px; flex: none; }
+.canvas-asset-noimg {
+  width: 28px; height: 28px; flex: none; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--studio-text-muted, #8b8b90);
+  border: 1px dashed var(--studio-border-subtle, #2a2a2e);
+}
+.canvas-asset-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.canvas-asset-scope { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 10px; color: var(--studio-text-muted, #8b8b90); }
+
+.canvas-asset-library-collapsed {
+  position: absolute; top: 12px; left: 12px; z-index: 8;
+  width: 34px; height: 34px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--studio-bg-inset, #17171a) 92%, transparent);
+  border: 1px solid var(--studio-border-subtle, #2a2a2e);
+  backdrop-filter: blur(12px);
+  color: var(--studio-text, #e6e6e6);
+}

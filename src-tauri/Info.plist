@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  麦克风用途说明。打包版必需：缺了它 macOS 不会弹授权框，
+  也不会报错，而是直接给应用送静音 —— 现象是"采集正常但永远听不到声音"。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Anima 需要使用麦克风来进行实时语音对话。音频仅在本机处理。</string>
+</dict>
+</plist>

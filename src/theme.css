@@ -1,0 +1,295 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   入场动画工具类。
+ 
+   项目里有 24 处在用 `animate-in fade-in ...`（13 个组件：弹窗、抽屉、审批
+   对话框、命令栏的模型选择器……），但 **`tailwindcss-animate` 从来没装过**，
+   Tailwind v4 也不再兼容它 —— 所以那些类一直是死的，`animationName` 计算出来
+   是 `none`，"入场动画"一个都没播。用浏览器查 computed style 才发现。
+ 
+   只补项目实际用到的那 6 个变体，不引新依赖：
+   animate-in / fade-in / zoom-in-95 / slide-in-from-bottom-{1,2} /
+   slide-in-from-right
+ 
+   实现方式和 tailwindcss-animate 一致：`animate-in` 负责挂 keyframes 和时长，
+   各个 `fade-in` / `zoom-in-*` / `slide-in-*` 只设初始值变量。这样它们能叠加
+   （`animate-in fade-in zoom-in-95` 是同时淡入+放大），而不是互相覆盖。
+   ───────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  @keyframes anima-enter {
+    from {
+      opacity: var(--anima-enter-opacity, 1);
+      transform: translate3d(
+          var(--anima-enter-tx, 0),
+          var(--anima-enter-ty, 0),
+          0
+        )
+        scale(var(--anima-enter-scale, 1));
+    }
+  }
+
+  .animate-in {
+    animation-name: anima-enter;
+    animation-duration: var(--anima-enter-duration, 150ms);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+
+    /* **必须在这里重置。** 自定义属性会继承 —— 弹层上的 `zoom-in-95` 会漏进
+       它内部所有带 animate-in 的子元素，于是一个只写了 `fade-in` 的标签也会
+       莫名跟着缩放。实测抓到过：标签的 transform 是 scale(0.95)。
+       重置放在 .animate-in 里、且声明在各变体**之前**，同元素上变体照样能覆盖它。 */
+    --anima-enter-opacity: 1;
+    --anima-enter-scale: 1;
+    --anima-enter-tx: 0;
+    --anima-enter-ty: 0;
+  }
+
+  /* 只设变量，不设 animation-name —— 这样多个能叠加 */
+  .fade-in { --anima-enter-opacity: 0; }
+  .zoom-in-95 { --anima-enter-scale: 0.95; }
+  .slide-in-from-bottom-1 { --anima-enter-ty: 0.25rem; }
+  .slide-in-from-bottom-2 { --anima-enter-ty: 0.5rem; }
+  .slide-in-from-right { --anima-enter-tx: 100%; }
+
+  /* duration-* 是 Tailwind 给 transition 用的，动画得单独接一下 */
+  .duration-150.animate-in { --anima-enter-duration: 150ms; }
+  .duration-200.animate-in { --anima-enter-duration: 200ms; }
+  .duration-300.animate-in { --anima-enter-duration: 300ms; }
+
+  /* ── 最高档的点阵微光 ──────────────────────────────────────────────
+     目标是"一颗颗星在各自闪"，难点在于 CSS 的 background-image 点阵
+     **没法让单个点各自动画** —— 一层就是一个 opacity，那一层所有点必然齐闪。
+     齐闪看起来是"一整片在呼吸"，不是星芒。
+
+     所以用两个手段伪造随机：
+
+     1. **不用重复格子。** `background-size` + `radial-gradient` 这个机制
+        **只能产生完美方格阵** —— 早先试过 6/6/12、7/9/11/13/17 各种互质
+        格距，每一层本身仍然是整齐排列的，"删掉规则的那层"根本删不掉。
+        现在每颗星是一条带 `at X% Y%` 的 gradient，位置任意（固定种子生成，
+        最小间距防结团），大小和亮度各不相同 —— 大小一致的点看起来是打孔板。
+
+     2. **互不通约的周期**（4.1 / 5.3 / 6.7 秒，质数除以 10）。
+        公倍数长到几分钟，眼睛抓不到整体节拍。早先 1.4 / 1.9 / 2.5 只有三层，
+        能数出"三片东西轮流亮"。
+
+     3. 亮度曲线是**长暗 + 短促尖峰**，不是平滑呼吸。星星是"一下一下地亮"，
+        平滑正弦读起来就是脉动。每条曲线的峰值落在不同相位上。
+     ────────────────────────────────────────────────────────────────── */
+  @keyframes twinkle-d {
+    0%, 30%, 100% { opacity: 0.08; }
+    36% { opacity: 0.80; }
+    43% { opacity: 0.12; }
+    58% { opacity: 0.45; }
+    64% { opacity: 0.10; }
+  }
+  @keyframes twinkle-e {
+    0%, 55%, 100% { opacity: 0.16; }
+    62% { opacity: 0.98; }
+    69% { opacity: 0.18; }
+    26% { opacity: 0.55; }
+  }
+
+  @keyframes twinkle-f {
+    0%, 22%, 100% { opacity: 0.10; }
+    28% { opacity: 0.90; }
+    35% { opacity: 0.14; }
+    76% { opacity: 0.52; }
+    82% { opacity: 0.11; }
+  }
+
+  .twinkle-d { animation: twinkle-d 4.1s linear infinite; }
+  .twinkle-e { animation: twinkle-e 5.3s linear infinite; }
+  .twinkle-f { animation: twinkle-f 6.7s linear infinite; }
+
+  /* 缓慢横扫的一层柔光。点阵是原地闪的（位移会有摩擦感），
+     但整体缺少"流动"；一条很宽很淡的高光横着走，能把那些原地闪的点
+     串成一片流动的微光，而单个点仍然没有位移。 */
+  @keyframes shimmer-sweep {
+    /* 从右边缘外进场、走到左边缘外出场。
+       填充条是从左往右生长的，高光逆着它走才有"反光扫过"的感觉；
+       同向走会像被填充推着跑，读起来是位移不是光。
+
+       **`translateX` 的百分比是相对元素自身宽度，不是容器。** 这是之前搞错
+       方向的原因：元素宽 45%（容器），基准 left:0，所以
+         translateX(222%) → 元素左沿在 0 + 0.45×222% ≈ 100%（贴着容器右沿外）
+         translateX(-100%) → 元素右沿在 0（完全移出左侧）
+       222 ≈ 100/45。改宽度的话这个数要跟着改。 */
+    0%   { transform: translateX(222%); }
+    100% { transform: translateX(-100%); }
+  }
+  .shimmer-sweep {
+    animation: shimmer-sweep 3.8s linear infinite;
+  }
+
+}
+
+@theme {
+  /* 轻微过冲的缓动，用在滑块位移上 —— 到位时有一点"落定"感。
+     写成 @theme token 而不是内联 ease-[cubic-bezier(...)]：
+     后者带逗号的任意值 Tailwind 不生成规则，实测产物 CSS 里 grep 不到。 */
+  --ease-spring: cubic-bezier(0.22, 1.35, 0.36, 1);
+  --color-paper: var(--paper);
+  --color-input-bg: var(--input-bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-celadon: var(--celadon);
+  --color-celadon-2: var(--celadon-2);
+  --color-amber: var(--amber);
+  --color-clay: var(--clay);
+  --color-desk-1: var(--desk-1);
+  --color-desk-2: var(--desk-2);
+  
+  --font-display: -apple-system, "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", ui-monospace, monospace;
+}
+
+@layer base {
+  :root {
+    --paper: #FFFFFF;          /* 纯白卡片底色（浮层卡片） */
+    --input-bg: #FAFAFC;       /* 输入框矩形内底色（比右侧主区 #F6F6F8 稍浅一度） */
+    --surface: #F6F6F8;        /* 右侧内容主区域（稍浅的柔和灰，融合底色） */
+    --surface-2: #EAEBED;      /* 左侧列表栏底色（标准深一阶冷灰） */
+    --surface-3: #DCDDE2;      /* 列表选中/悬停高亮胶囊色 */
+    --ink: #111827;            /* 主文本墨黑 */
+    --ink-2: #4B5563;          /* 次要文本灰 */
+    --ink-3: #9CA3AF;          /* 静音提示灰 */
+    --line: #E1E2E7;           /* 极简分割线 */
+    /* 滑块这类"抬起的控件面"：必须比轨道**更亮**。
+       不能用 --paper 或 --ink-2 —— 那两个在两套主题里方向是相反的
+       （ink-2 浅色是 #4B5563 深灰、深色是 #9CA3AF 浅灰），
+       拿来做滑块会在浅色主题下变成深块，和参考实现正好反过来。 */
+    --control-raised: #FFFFFF;
+    --celadon: #0284C7;        /* Antigravity 标志性主色天蓝 */
+    --celadon-2: #E0F2FE;      /* 浅蓝强调色背景 */
+    --amber: #D97706;          /* 思考/警告琥珀金 */
+    --clay: #DC2626;           /* 危险/删除红 */
+    --desk-1: #94A3B8;
+    --desk-2: #64748B;
+    --win-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  /* **守卫不能省。** 不加的话，系统是深色时手动选「浅色」按不回去 ——
+     媒体查询里的 `:root` 会把浅色值又盖掉。 */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1B1E22;
+      --input-bg: #1A1D21;
+      --surface: #121417;
+      --surface-2: #181B1F;
+      --surface-3: #262A30;
+      --ink: #F3F4F6;
+      --ink-2: #9CA3AF;
+      --ink-3: #6B7280;
+      --line: #262A30;
+      --control-raised: #9CA3AF;
+      --celadon: #38BDF8;
+      --celadon-2: #0C4A6E;
+      --amber: #FBBF24;
+      --clay: #EF4444;
+      --desk-1: #334155;
+      --desk-2: #1E293B;
+      --win-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #1B1E22;
+    --input-bg: #1A1D21;
+    --surface: #121417;
+    --surface-2: #181B1F;
+    --surface-3: #262A30;
+    --ink: #F3F4F6;
+    --ink-2: #9CA3AF;
+    --ink-3: #6B7280;
+    --line: #262A30;
+    --celadon: #38BDF8;
+    --celadon-2: #0C4A6E;
+    --amber: #FBBF24;
+    --clay: #EF4444;
+    --desk-1: #334155;
+    --desk-2: #1E293B;
+    --win-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  }
+
+  html, body, #root {
+    background: transparent !important;
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* ── 统一表单控件（Select / Input / Button）高度与精致 Antigravity 样式 ── */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 14px 14px;
+    padding-right: 2.2rem !important;
+    height: 34px !important;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input:not([type]) {
+    height: 34px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  button.btn-action,
+  .btn-control {
+    height: 34px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 自定义极简透明滚动条：无底槽，4px 极细半透明浮动滑块 */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--ink-3) 45%, transparent);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--ink-2) 70%, transparent);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+

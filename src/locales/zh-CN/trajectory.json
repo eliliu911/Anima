@@ -1,0 +1,15 @@
+{
+  "summary": {
+    "thinking": "正在思考...",
+    "working": "正在执行工具...",
+    "completed": "执行完毕"
+  },
+  "verbs": {
+    "read": "查看了",
+    "ran": "运行了",
+    "edited": "修改了",
+    "dispatched": "派发了",
+    "generated": "生成了",
+    "called": "调用了"
+  }
+}

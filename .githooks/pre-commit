@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# 多 agent 协作护栏。
+#
+# 拦两件真实发生过的事：
+#
+#   1. 在**共用**工作区里 `git add -A`，把另一个 agent 还没提交的在制品
+#      一起扫进自己的 commit（已经发生过一次：一份评审文档和一整个函数
+#      被扫进了不相干的提交，导致报告归属失真）；
+#   2. 隔离之后，两个工作区同时改同一个文件 —— 这时冲突是可预见的，
+#      与其等到合并再炸，不如在提交前就说清楚。
+#
+# 装：git config core.hooksPath .githooks
+set -euo pipefail
+
+# git 在跑 hook 时会注入 GIT_DIR / GIT_INDEX_FILE / GIT_WORK_TREE，
+# 它们会泄漏进下面对**其它工作区**的 git 调用，表现为
+# "fatal: .git/index: index file open failed: Not a directory"
+# （linked worktree 的 .git 是个文件）。必须先清掉。
+git() { env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX command git "$@"; }
+
+staged=$(git diff --cached --name-only)
+[ -n "$staged" ] || exit 0
+
+self=$(git rev-parse --show-toplevel)
+others=$(git worktree list --porcelain | awk '/^worktree /{print $2}' | grep -v "^$self$" || true)
+
+[ -n "$others" ] || exit 0
+
+hit=0
+while read -r wt; do
+  [ -n "$wt" ] || continue
+  # 读不出来就**拒绝**，不静默放行 —— 一个悄悄失效的护栏比没有护栏更糟，
+  # 因为它会让人以为有保护。
+  if ! dirty=$( { git -C "$wt" diff --name-only && git -C "$wt" diff --cached --name-only; } 2>&1 ); then
+    echo "✗ 无法读取工作区 $wt 的状态，拒绝提交：" >&2
+    echo "$dirty" | sed 's/^/    /' >&2
+    exit 1
+  fi
+  [ -n "$dirty" ] || continue
+  overlap=$(comm -12 <(echo "$staged" | sort -u) <(echo "$dirty" | sort -u))
+  if [ -n "$overlap" ]; then
+    if [ $hit -eq 0 ]; then
+      echo "✗ 提交被拦下：这些文件在另一个 agent 的工作区里也有未提交改动。" >&2
+      hit=1
+    fi
+    echo >&2
+    echo "  另一个工作区：$wt" >&2
+    echo "$overlap" | sed 's/^/    /' >&2
+  fi
+done <<< "$others"
+
+if [ $hit -eq 1 ]; then
+  echo >&2
+  echo "  同一个文件被两个 agent 同时改，合并时一定出问题，而且很难查是谁改的。" >&2
+  echo "  先协调好谁负责这些文件，或者等对方提交完再来。" >&2
+  echo "  确实要强行提交：git commit --no-verify" >&2
+  exit 1
+fi

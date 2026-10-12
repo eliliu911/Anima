@@ -1,0 +1,27 @@
+import { useRef, useState } from "react";
+import { useCanvasStore } from "../store/useCanvasStore";
+import { uploadVideoInput } from "../utils/uploadVideoInput";
+import { Upload } from "./icons";
+
+export function CanvasVideoUploadButton({ nodeId }: { nodeId: string }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState("");
+  const locked = useCanvasStore((s) => {
+    const node = s.nodes.find((n) => n.id === nodeId);
+    return !node || !!node.data.isGenerating || !!node.data.referenceLoading;
+  });
+  return <div className="nodrag nopan flex min-w-0 flex-col gap-1">
+    <button type="button" disabled={locked} onClick={() => input.current?.click()}
+      title="上传一段视频当素材 —— 接到「深度动作捕捉」上就能复刻里面的动作"
+      className="flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 hover:bg-white/10 disabled:opacity-40">
+      <Upload className="h-3 w-3" />上传视频
+    </button>
+    <input ref={input} type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => {
+      const file = e.target.files?.[0]; e.target.value = "";
+      if (!file) return;
+      setError("");
+      void uploadVideoInput(nodeId, file).catch((err) => setError(String(err)));
+    }} />
+    {error && <span role="alert" className="max-w-[240px] break-words text-xs text-red-400">{error}</span>}
+  </div>;
+}

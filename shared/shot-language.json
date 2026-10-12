@@ -1,0 +1,846 @@
+{
+  "$schema": "见 docs/PLAN_SHOT_LANGUAGE.md 第五节",
+  "note": "唯一真相。Rust include_str! / TS import / scripts 生成 skills 的 md 都读这一份。改这里，三边一起变。",
+  "chineseEngines": {
+    "note": "编码器中文原生的引擎 —— 这些引擎发中文提示词，其余发英文。别名要写全：项目里存的可能是 minimax_h3 / ltx25 这些老写法，漏一条的表现是那个引擎静默收到英文，图照出、只是那一段基本不生效。",
+    "ids": [
+      "zimage",
+      "z_image",
+      "h3",
+      "minimax_h3",
+      "minimax-h3",
+      "ltx",
+      "ltx25",
+      "ltx2.5",
+      "ltx-2.5",
+      "krea2",
+      "krea-2",
+      "krea_2",
+      "krea",
+      "qwen21",
+      "qwen-2.1",
+      "qwen_2_1",
+      "qwen_image_2.1",
+      "qwen-image-2.1"
+    ]
+  },
+  "groups": [
+    {
+      "id": "shotSize",
+      "name": "景别",
+      "aspectAware": true,
+      "items": [
+        {
+          "id": "extreme_wide",
+          "name": "大远景",
+          "prompt": {
+            "en": "extreme long shot, establishing shot",
+            "zh": "大远景，交代环境全貌"
+          },
+          "still": true,
+          "aspect": "landscape",
+          "note": "横幅。人只占一小块，脸的像素预算约等于零 —— 别在这一档指望长相"
+        },
+        {
+          "id": "wide",
+          "name": "远景",
+          "prompt": {
+            "en": "long shot, wide shot",
+            "zh": "远景，人物完整入画且环境占主导"
+          },
+          "still": true,
+          "aspect": "landscape"
+        },
+        {
+          "id": "full_body",
+          "name": "全景",
+          "prompt": {
+            "en": "full body shot, head to toe",
+            "zh": "全身入画，从头到脚完整可见"
+          },
+          "still": true,
+          "aspect": "portrait",
+          "aspectHard": true,
+          "note": "**一定用竖画幅。** 1:1 下人物被横向压缩，脸和手的像素预算都不够 —— 这是手指畸形最常见的间接原因（实测）"
+        },
+        {
+          "id": "medium",
+          "name": "中景",
+          "prompt": {
+            "en": "medium shot, waist up",
+            "zh": "中景，腰部以上"
+          },
+          "still": true,
+          "aspect": "portrait",
+          "note": "竖或方都行"
+        },
+        {
+          "id": "medium_close",
+          "name": "近景",
+          "prompt": {
+            "en": "close-up, head and shoulders",
+            "zh": "近景，头和肩"
+          },
+          "still": true,
+          "aspect": "square"
+        },
+        {
+          "id": "close_up",
+          "name": "特写",
+          "prompt": {
+            "en": "close-up, face fills the frame",
+            "zh": "特写，脸部充满画面"
+          },
+          "still": true,
+          "aspect": "square",
+          "note": "脸的像素预算最足，锁身份用这一档"
+        },
+        {
+          "id": "extreme_close_up",
+          "name": "大特写",
+          "prompt": {
+            "en": "extreme close-up, macro detail",
+            "zh": "大特写，眼睛或局部细节充满画面"
+          },
+          "still": true,
+          "aspect": "square"
+        }
+      ],
+      "aspectNote": "aspect 是**建议**，给单张出图用（那时候画幅是你自己挑的）。剧集的画幅由项目定死，混画幅会毁剪辑 —— 所以那边只在 aspectHard 的档位上提示。aspectHard = 画幅不对会**实际出问题**，不是不够理想。加这个标记前先问一句：有实测吗？没有就别加，报太多等于没报。"
+    },
+    {
+      "id": "angle",
+      "name": "机位",
+      "items": [
+        {
+          "id": "eye_level",
+          "name": "平视",
+          "prompt": {
+            "en": "eye level",
+            "zh": "平视，与主体视线同高"
+          },
+          "still": true,
+          "note": "最中性，不带情绪暗示"
+        },
+        {
+          "id": "low_angle",
+          "name": "仰拍",
+          "prompt": {
+            "en": "low angle, looking up",
+            "zh": "低机位仰拍"
+          },
+          "still": true,
+          "note": "显高、显强势"
+        },
+        {
+          "id": "high_angle",
+          "name": "俯拍",
+          "prompt": {
+            "en": "high angle, looking down",
+            "zh": "高机位俯拍"
+          },
+          "still": true,
+          "note": "显弱、显渺小"
+        },
+        {
+          "id": "birds_eye",
+          "name": "鸟瞰",
+          "prompt": {
+            "en": "bird's eye view, top down",
+            "zh": "正上方鸟瞰"
+          },
+          "still": true
+        },
+        {
+          "id": "dutch",
+          "name": "荷兰角",
+          "prompt": {
+            "en": "dutch angle, tilted horizon",
+            "zh": "地平线倾斜"
+          },
+          "still": true,
+          "note": "不安、失衡"
+        },
+        {
+          "id": "over_shoulder",
+          "name": "过肩",
+          "prompt": {
+            "en": "over the shoulder shot",
+            "zh": "越过一方肩膀看另一方"
+          },
+          "still": true,
+          "note": "对话镜头"
+        },
+        {
+          "id": "pov",
+          "name": "主观",
+          "prompt": {
+            "en": "first person point of view",
+            "zh": "主观视角，代入角色的眼睛"
+          },
+          "still": true
+        }
+      ]
+    },
+    {
+      "id": "move",
+      "name": "运镜",
+      "stillNote": "运镜只进视频提示词 —— 静帧里没有「推」这回事",
+      "items": [
+        {
+          "id": "static",
+          "name": "固定",
+          "prompt": {
+            "en": "static camera, locked off",
+            "zh": "镜头固定不动，由表演和环境完成叙事"
+          },
+          "still": false,
+          "note": "**「固定」是严格的：零移动、零变焦、零对焦变化。** 只要有任何一样，就不要写固定，去挑对应的那一条 —— 写了固定又出现运动动词，模型要么忽略其一，要么出自相矛盾的抖动。",
+          "group": "still"
+        },
+        {
+          "id": "push_in",
+          "name": "推镜头",
+          "prompt": {
+            "en": "slow push in, dolly in",
+            "zh": "镜头缓慢推近，逐步收紧到主体"
+          },
+          "still": false,
+          "group": "translate"
+        },
+        {
+          "id": "pull_out",
+          "name": "拉镜头",
+          "prompt": {
+            "en": "pull out, dolly out",
+            "zh": "镜头缓慢拉远，逐步交代环境"
+          },
+          "still": false,
+          "group": "translate"
+        },
+        {
+          "id": "pan_left",
+          "name": "左摇",
+          "prompt": {
+            "en": "pan left",
+            "zh": "镜头原地向左横摇，带出画面左侧的信息"
+          },
+          "still": false,
+          "group": "rotate"
+        },
+        {
+          "id": "pan_right",
+          "name": "右摇",
+          "prompt": {
+            "en": "pan right",
+            "zh": "镜头原地向右横摇，带出画面右侧的信息"
+          },
+          "still": false,
+          "group": "rotate"
+        },
+        {
+          "id": "tilt_up",
+          "name": "上摇",
+          "prompt": {
+            "en": "tilt up",
+            "zh": "镜头原地向上摇，逐步揭示主体上方的空间"
+          },
+          "still": false,
+          "group": "rotate"
+        },
+        {
+          "id": "tilt_down",
+          "name": "下摇",
+          "prompt": {
+            "en": "tilt down",
+            "zh": "镜头原地向下摇，逐步落到主体动作或地面"
+          },
+          "still": false,
+          "group": "rotate"
+        },
+        {
+          "id": "truck_left",
+          "name": "左移",
+          "prompt": {
+            "en": "truck left, lateral dolly left",
+            "zh": "机身整体向左平移，保持朝向不变"
+          },
+          "still": false,
+          "note": "和「左摇」不同：摇是原地转，移是机身走",
+          "group": "translate"
+        },
+        {
+          "id": "truck_right",
+          "name": "右移",
+          "prompt": {
+            "en": "truck right, lateral dolly right",
+            "zh": "机身整体向右平移，保持朝向不变"
+          },
+          "still": false,
+          "group": "translate"
+        },
+        {
+          "id": "pedestal_up",
+          "name": "升镜头",
+          "prompt": {
+            "en": "pedestal up, crane up",
+            "zh": "机身整体垂直上升，视角逐步抬高"
+          },
+          "still": false,
+          "note": "和「上摇」不同：摇是抬头，升是整机往上走",
+          "group": "translate"
+        },
+        {
+          "id": "pedestal_down",
+          "name": "降镜头",
+          "prompt": {
+            "en": "pedestal down, crane down",
+            "zh": "机身整体垂直下降，视角逐步压低"
+          },
+          "still": false,
+          "group": "translate"
+        },
+        {
+          "id": "follow",
+          "name": "跟拍",
+          "prompt": {
+            "en": "camera tracking alongside subject",
+            "zh": "镜头持续跟随主体移动，主体始终在视觉中心"
+          },
+          "still": false,
+          "group": "hybrid"
+        },
+        {
+          "id": "orbit",
+          "name": "环绕",
+          "prompt": {
+            "en": "orbit around subject",
+            "zh": "镜头围绕主体转动，逐步展开空间关系"
+          },
+          "still": false,
+          "note": "保持同高度环绕。要带高度变化用「环绕抬升 / 环绕下降」",
+          "group": "hybrid"
+        },
+        {
+          "id": "orbit_up",
+          "name": "环绕抬升",
+          "prompt": {
+            "en": "orbit around subject while rising",
+            "zh": "镜头围绕主体转动，同时缓慢抬升"
+          },
+          "still": false,
+          "note": "空间展开 + 情绪上扬",
+          "group": "hybrid"
+        },
+        {
+          "id": "orbit_down",
+          "name": "环绕下降",
+          "prompt": {
+            "en": "orbit around subject while descending",
+            "zh": "镜头围绕主体转动，同时缓慢下降"
+          },
+          "still": false,
+          "note": "包围感 + 压迫感",
+          "group": "hybrid"
+        },
+        {
+          "id": "handheld",
+          "name": "手持",
+          "prompt": {
+            "en": "handheld, subtle shake",
+            "zh": "手持轻微晃动，模拟呼吸感"
+          },
+          "still": false,
+          "note": "纪实感、紧张感；和「固定」互斥",
+          "group": "hybrid"
+        },
+        {
+          "id": "zoom_in",
+          "name": "变焦推近",
+          "group": "lens",
+          "prompt": {
+            "en": "zoom in, focal length increases, camera does not move",
+            "zh": "镜头焦距拉长、画面放大，**摄影机本身不动**"
+          },
+          "still": false,
+          "note": "**和「推镜头」不是一回事**：推镜头是机器往前走（透视会变），变焦只是焦距变（透视不变）。想要「机位不动、画面拉近」时用这条 —— 以前没有这一类，只能错用推镜头。"
+        },
+        {
+          "id": "zoom_out",
+          "name": "变焦拉远",
+          "group": "lens",
+          "prompt": {
+            "en": "zoom out, focal length decreases, camera does not move",
+            "zh": "镜头焦距缩短、画面变宽，**摄影机本身不动**"
+          },
+          "still": false
+        },
+        {
+          "id": "rack_focus",
+          "name": "变焦点",
+          "group": "lens",
+          "prompt": {
+            "en": "rack focus from foreground to background subject",
+            "zh": "焦点在前后景之间转移，摄影机和焦距都不动"
+          },
+          "still": false,
+          "note": "要说清**从哪个面转到哪个面**（前景→后景 / 这个人→那个人），只写「变焦点」模型不知道往哪转。"
+        },
+        {
+          "id": "dolly_zoom",
+          "name": "滑动变焦",
+          "group": "hybrid",
+          "prompt": {
+            "en": "dolly zoom, vertigo effect, background warps while subject stays the same size",
+            "zh": "机器前进的同时焦距反向变化，主体大小不变而背景被挤压／拉伸"
+          },
+          "still": false,
+          "note": "**只在揭示性的那一刻用**。它是强修辞，连用两次就廉价了。"
+        },
+        {
+          "id": "whip_pan",
+          "name": "甩镜",
+          "group": "rotate",
+          "prompt": {
+            "en": "whip pan, fast blurred horizontal swish",
+            "zh": "极快横摇，画面拉成模糊的横向拖影"
+          },
+          "still": false,
+          "note": "多用来接下一镜（甩接）。单独用一次没问题，每镜都甩就是晕眩。"
+        }
+      ],
+      "groupNames": {
+        "translate": "平移（机器真的在动）",
+        "rotate": "旋转（原地转）",
+        "lens": "纯镜头（机器不动）",
+        "hybrid": "复合",
+        "still": "静止"
+      }
+    },
+    {
+      "id": "lightPosition",
+      "name": "光位",
+      "items": [
+        {
+          "id": "front",
+          "name": "顺光",
+          "prompt": {
+            "en": "front lighting, flat lighting",
+            "zh": "正面打光，阴影少而平"
+          },
+          "still": true,
+          "note": "适合设定卡 —— 要的就是看清"
+        },
+        {
+          "id": "side",
+          "name": "侧光",
+          "prompt": {
+            "en": "side lighting, split lighting",
+            "zh": "侧面打光，明暗分界明显"
+          },
+          "still": true,
+          "note": "立体感最强"
+        },
+        {
+          "id": "backlit",
+          "name": "逆光",
+          "prompt": {
+            "en": "backlit, rim light, contre-jour",
+            "zh": "逆光，发丝和边缘发光"
+          },
+          "still": true,
+          "note": "最出氛围。**配浅景深容易让脸欠曝**，人像记得补一句补光"
+        },
+        {
+          "id": "top",
+          "name": "顶光",
+          "prompt": {
+            "en": "top lighting, overhead light",
+            "zh": "顶部打光，眼窝阴影重"
+          },
+          "still": true,
+          "note": "压抑"
+        },
+        {
+          "id": "rembrandt",
+          "name": "伦勃朗光",
+          "prompt": {
+            "en": "Rembrandt lighting",
+            "zh": "颊侧三角光"
+          },
+          "still": true,
+          "note": "经典人像"
+        },
+        {
+          "id": "butterfly",
+          "name": "蝴蝶光",
+          "prompt": {
+            "en": "butterfly lighting, paramount lighting",
+            "zh": "鼻下蝶形阴影"
+          },
+          "still": true,
+          "note": "时尚感"
+        },
+        {
+          "id": "fill_face",
+          "name": "补光脸部",
+          "prompt": {
+            "en": "fill light on face",
+            "zh": "给脸部补一档光"
+          },
+          "still": true,
+          "note": "逆光/低调时救欠曝用"
+        }
+      ]
+    },
+    {
+      "id": "lightQuality",
+      "name": "光质",
+      "items": [
+        {
+          "id": "soft",
+          "name": "柔光",
+          "prompt": {
+            "en": "soft diffused light",
+            "zh": "柔和漫射光，过渡平滑"
+          },
+          "still": true
+        },
+        {
+          "id": "hard",
+          "name": "硬光",
+          "prompt": {
+            "en": "hard direct light",
+            "zh": "硬直射光，阴影边缘锐利"
+          },
+          "still": true
+        },
+        {
+          "id": "dappled",
+          "name": "斑驳",
+          "prompt": {
+            "en": "dappled light",
+            "zh": "透过缝隙的斑驳光"
+          },
+          "still": true
+        },
+        {
+          "id": "volumetric",
+          "name": "体积光",
+          "prompt": {
+            "en": "volumetric light, god rays",
+            "zh": "可见光束"
+          },
+          "still": true
+        },
+        {
+          "id": "practical",
+          "name": "画面内光源",
+          "prompt": {
+            "en": "practical lights",
+            "zh": "光源本身在画面里（灯、屏、火）"
+          },
+          "still": true
+        }
+      ]
+    },
+    {
+      "id": "lightTime",
+      "name": "时段与色温",
+      "items": [
+        {
+          "id": "golden_hour",
+          "name": "黄金时刻",
+          "prompt": {
+            "en": "golden hour",
+            "zh": "黄昏暖光"
+          },
+          "still": true,
+          "note": "最讨好肤色"
+        },
+        {
+          "id": "blue_hour",
+          "name": "蓝调时刻",
+          "prompt": {
+            "en": "blue hour",
+            "zh": "日落后的冷蓝天光"
+          },
+          "still": true
+        },
+        {
+          "id": "overcast",
+          "name": "阴天",
+          "prompt": {
+            "en": "overcast, soft grey light",
+            "zh": "阴天，均匀无明显阴影"
+          },
+          "still": true
+        },
+        {
+          "id": "neon",
+          "name": "霓虹",
+          "prompt": {
+            "en": "neon lit, cyberpunk lighting",
+            "zh": "霓虹光，冷暖对撞"
+          },
+          "still": true
+        },
+        {
+          "id": "candle",
+          "name": "烛光",
+          "prompt": {
+            "en": "candlelit, warm firelight",
+            "zh": "烛火暖光，明暗跳动"
+          },
+          "still": true
+        },
+        {
+          "id": "moonlight",
+          "name": "月光",
+          "prompt": {
+            "en": "moonlight, cool blue tone",
+            "zh": "月光冷蓝"
+          },
+          "still": true
+        },
+        {
+          "id": "studio",
+          "name": "摄影棚",
+          "prompt": {
+            "en": "studio lighting, softbox, three-point lighting",
+            "zh": "棚拍三点光"
+          },
+          "still": true
+        },
+        {
+          "id": "high_key",
+          "name": "明调",
+          "prompt": {
+            "en": "high key",
+            "zh": "整体明亮、低反差"
+          },
+          "still": true
+        },
+        {
+          "id": "low_key",
+          "name": "暗调",
+          "prompt": {
+            "en": "low key, chiaroscuro",
+            "zh": "整体暗、高反差"
+          },
+          "still": true
+        }
+      ]
+    },
+    {
+      "id": "lens",
+      "name": "焦段",
+      "items": [
+        {
+          "id": "f24",
+          "name": "广角 24mm",
+          "prompt": {
+            "en": "24mm wide angle",
+            "zh": "24mm 广角"
+          },
+          "still": true,
+          "note": "透视夸张，交代环境；人脸会变形"
+        },
+        {
+          "id": "f35",
+          "name": "纪实 35mm",
+          "prompt": {
+            "en": "35mm",
+            "zh": "35mm"
+          },
+          "still": true,
+          "note": "纪实感"
+        },
+        {
+          "id": "f50",
+          "name": "标准 50mm",
+          "prompt": {
+            "en": "50mm",
+            "zh": "50mm"
+          },
+          "still": true,
+          "note": "接近人眼"
+        },
+        {
+          "id": "f85",
+          "name": "人像 85mm",
+          "prompt": {
+            "en": "85mm portrait lens",
+            "zh": "85mm 人像镜"
+          },
+          "still": true,
+          "note": "背景压缩，脸型讨好"
+        },
+        {
+          "id": "f135",
+          "name": "长焦 135mm",
+          "prompt": {
+            "en": "135mm telephoto, compressed background",
+            "zh": "135mm 长焦"
+          },
+          "still": true,
+          "note": "强压缩"
+        }
+      ]
+    },
+    {
+      "id": "depth",
+      "name": "景深",
+      "items": [
+        {
+          "id": "shallow",
+          "name": "浅景深",
+          "prompt": {
+            "en": "shallow depth of field, bokeh",
+            "zh": "浅景深，背景虚化"
+          },
+          "still": true
+        },
+        {
+          "id": "deep",
+          "name": "深景深",
+          "prompt": {
+            "en": "deep focus, everything in focus",
+            "zh": "深景深，前后都清楚"
+          },
+          "still": true
+        }
+      ]
+    },
+    {
+      "id": "look",
+      "name": "影调",
+      "items": [
+        {
+          "id": "warm",
+          "name": "暖调",
+          "prompt": {
+            "en": "warm color grading",
+            "zh": "暖色调"
+          },
+          "still": true
+        },
+        {
+          "id": "cool",
+          "name": "冷调",
+          "prompt": {
+            "en": "cool color grading",
+            "zh": "冷色调"
+          },
+          "still": true
+        },
+        {
+          "id": "teal_orange",
+          "name": "青橙",
+          "prompt": {
+            "en": "teal and orange grading",
+            "zh": "青橙调"
+          },
+          "still": true,
+          "note": "商业片最常见"
+        },
+        {
+          "id": "desaturated",
+          "name": "低饱和",
+          "prompt": {
+            "en": "desaturated, muted colors",
+            "zh": "低饱和"
+          },
+          "still": true
+        },
+        {
+          "id": "high_contrast",
+          "name": "高反差",
+          "prompt": {
+            "en": "high contrast",
+            "zh": "高反差"
+          },
+          "still": true
+        },
+        {
+          "id": "film_grain",
+          "name": "胶片颗粒",
+          "prompt": {
+            "en": "film grain, analog film look",
+            "zh": "胶片颗粒"
+          },
+          "still": true
+        },
+        {
+          "id": "bw",
+          "name": "黑白",
+          "prompt": {
+            "en": "black and white, monochrome",
+            "zh": "黑白"
+          },
+          "still": true
+        }
+      ]
+    }
+  ],
+  "assembly": {
+    "note": "分段拼，每段一行带标题。**标题只有一个所有者：labels。** 下面这几句里不要再自带「角色一致性：」这种前缀，否则拼出来是双份。也不要写 markdown 的 ** —— 这些字符串是直接发给模型的，不是给人读的。 分段拼装时每段的标题。学 DramaClaw 的结构 —— 一段一行、带标题，比全部用逗号连成一句要清楚得多：模型能分清哪句说的是画面、哪句说的是镜头。句子是我们自己的。",
+    "sections": [
+      "shotSize",
+      "angle",
+      "move",
+      "lightPosition",
+      "lightQuality",
+      "lightTime",
+      "lens",
+      "depth",
+      "look"
+    ],
+    "consistency": {
+      "zh": "保持 {names} 的外观、服装与身份特征稳定一致。",
+      "en": "Keep {names} visually identical across the shot."
+    },
+    "outputRule": {
+      "zh": "单条连贯镜头，动作自然，避免闪烁、变形、跳帧和主体身份漂移。",
+      "en": "One continuous shot, natural motion, no flicker, warping, frame jumps or identity drift."
+    },
+    "referenceSingle": {
+      "zh": "把这张图作为主体、外观与整体风格的参考，画面内容由提示词主导；不要把它锁成第一帧。",
+      "en": "Use the image for subject, appearance and overall look; the prompt drives the content. Do not lock it as the first frame."
+    },
+    "referenceMulti": {
+      "zh": "综合参考多张输入图，优先保持主体身份、服装与场景线索一致；不要把它们拼贴成多画面。",
+      "en": "Combine the inputs to keep identity, wardrobe and scene cues consistent. Do NOT collage them into a split-screen."
+    },
+    "labels": {
+      "style": {
+        "zh": "画风",
+        "en": "Style"
+      },
+      "scene": {
+        "zh": "画面",
+        "en": "Scene"
+      },
+      "camera": {
+        "zh": "镜头",
+        "en": "Camera"
+      },
+      "consistency": {
+        "zh": "角色一致性",
+        "en": "Character consistency"
+      },
+      "reference": {
+        "zh": "参考图",
+        "en": "Reference"
+      },
+      "output": {
+        "zh": "输出要求",
+        "en": "Output"
+      },
+      "dialogue": {
+        "zh": "台词",
+        "en": "Dialogue"
+      }
+    }
+  }
+}

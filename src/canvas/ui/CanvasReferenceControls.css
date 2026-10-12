@@ -1,0 +1,47 @@
+.canvas-reference-anchor { position: relative; }
+.canvas-lora-anchor { position: relative; }
+.canvas-lora-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 65;
+  width: 320px; max-width: 80vw; max-height: 380px; overflow: auto;
+  padding: 14px; border: 1px solid #ffffff24; border-radius: 8px;
+  background: #292929; color: #dedede; box-shadow: 0 8px 24px #00000038;
+  --studio-text-muted: #aaa; --studio-primary: #72c8e8; --studio-failed-fg: #ef8585;
+}
+.canvas-reference-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: 220px;
+  padding: 5px;
+  border: 1px solid #ffffff24;
+  border-radius: 8px;
+  background: #292929;
+  box-shadow: 0 8px 24px #00000038, 0 1px 3px #00000026;
+  letter-spacing: 0;
+}
+.canvas-reference-menu .canvas-reference-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #dedede;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.canvas-reference-menu .canvas-reference-option:hover,
+.canvas-reference-menu .canvas-reference-option:focus-visible {
+  background: #ffffff0d;
+  color: #fff;
+}
+.canvas-reference-menu .canvas-reference-option:focus-visible { outline: 1px solid #ffffff50; outline-offset: -1px; }
+.canvas-reference-option-icon { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: #a4a4a4; }
+.canvas-reference-option-title { display: block; font-size: 13px; font-weight: 500; line-height: 19px; }
+.canvas-reference-option-detail { display: block; margin-top: 1px; font-size: 11px; font-weight: 400; line-height: 16px; color: #898989; }
+.canvas-reference-menu .canvas-reference-option:disabled { opacity: .4; cursor: default; }

@@ -1,0 +1,108 @@
+.canvas-image-asset-toolbar {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 20;
+  display: flex; align-items: center; gap: 8px; padding: 4px;
+  border: 1px solid #ffffff26; border-radius: 8px; background: #232323f5;
+  box-shadow: 0 4px 12px #0004; color: #eee; white-space: nowrap;
+}
+.canvas-image-asset-toolbar button {
+  display: flex; align-items: center; gap: 6px; padding: 6px 9px;
+  border: 0; border-radius: 4px; background: transparent; color: inherit; font-size: 12px; cursor: pointer;
+}
+.canvas-image-asset-toolbar button:hover { background: #ffffff16; }
+.canvas-image-asset-toolbar span { display: flex; align-items: center; gap: 4px; padding-right: 6px; font-size: 11px; color: #9cd7b5; }
+
+/* 带类型的提交面板。浮在节点上方，不挤占节点自身的布局。 */
+.canvas-commit-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  margin-top: 6px;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--studio-bg-inset, #17171a) 95%, transparent);
+  border: 1px solid var(--studio-border-subtle, #2a2a2e);
+  backdrop-filter: blur(12px);
+  color: var(--studio-text, #e6e6e6);
+  font-size: 11px;
+}
+.canvas-commit-panel label { display: flex; flex-direction: column; gap: 4px; color: var(--studio-text-muted, #8b8b90); }
+.canvas-commit-panel select {
+  width: 100%; padding: 5px 6px; border-radius: 6px; font-size: 11px;
+  background: var(--studio-bg, #0f0f11);
+  border: 1px solid var(--studio-border-subtle, #2a2a2e);
+  color: var(--studio-text, #e6e6e6);
+}
+.canvas-commit-panel label > select + select { margin-top: 4px; }
+.canvas-commit-panel p[role="alert"] { color: #fca5a5; overflow-wrap: anywhere; }
+.canvas-commit-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.canvas-commit-actions button {
+  padding: 5px 10px; border-radius: 6px; font-size: 11px;
+  border: 1px solid var(--studio-border-subtle, #2a2a2e);
+}
+.canvas-commit-actions button:last-child { background: color-mix(in srgb, currentColor 12%, transparent); }
+.canvas-commit-actions button:disabled { opacity: .4; }
+
+/* ── 工作流目录 ──────────────────────────────────────────────── */
+.canvas-workflow-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  width: 420px;
+  max-height: 60vh;
+  overflow: auto;
+  z-index: 40;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(18, 20, 26, 0.96);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  padding: 12px 14px 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+}
+.canvas-workflow-panel header { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+.canvas-workflow-panel header button { color: rgba(255,255,255,.5); font-size: 16px; line-height: 1; padding: 0 4px; }
+.canvas-workflow-panel header button:hover { color: #fff; }
+.canvas-workflow-panel .wf-save { display: flex; gap: 6px; }
+.canvas-workflow-panel .wf-save input {
+  flex: 1; min-width: 0; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 5px 8px; color: #fff;
+}
+.canvas-workflow-panel button:not(:disabled):hover { background: rgba(255,255,255,.14); }
+.canvas-workflow-panel .wf-save button,
+.canvas-workflow-panel .wf-list button {
+  border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 4px 8px;
+  background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); white-space: nowrap;
+}
+.canvas-workflow-panel button:disabled { opacity: .45; }
+.canvas-workflow-panel .wf-hint { margin-top: 6px; color: rgba(255,255,255,.4); line-height: 1.5; font-size: 11px; }
+.canvas-workflow-panel .wf-err { color: #fda4af; margin-top: 6px; }
+.canvas-workflow-panel .wf-ok { color: #6ee7b7; margin-top: 6px; }
+.canvas-workflow-panel .wf-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.canvas-workflow-panel .wf-list li { display: flex; align-items: center; gap: 6px; }
+.canvas-workflow-panel .wf-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.canvas-workflow-panel .wf-list .wf-drop { color: rgba(253,164,175,.85); }
+.canvas-workflow-panel .wf-empty { color: rgba(255,255,255,.35); }
+.canvas-workflow-panel .wf-needs { margin-top: 12px; border-top: 1px solid rgba(255,255,255,.1); padding-top: 10px; }
+.canvas-workflow-panel .wf-needs-title { color: rgba(255,255,255,.7); margin-bottom: 6px; }
+.canvas-workflow-panel .wf-needs li { line-height: 1.7; }
+.canvas-workflow-panel .wf-needs li.missing { color: #fcd34d; }
+.canvas-workflow-panel .wf-needs li.ok { color: rgba(255,255,255,.45); }
+.canvas-workflow-panel .wf-presets { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.canvas-workflow-panel .wf-presets-title { width: 100%; color: rgba(255,255,255,.45); font-size: 11px; }
+.canvas-workflow-panel .wf-presets button {
+  border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 3px 9px;
+  background: rgba(255,255,255,.05); color: rgba(255,255,255,.8); font-size: 11px;
+}
+.canvas-workflow-panel .wf-from { color: rgba(255,255,255,.35); }
+.canvas-workflow-panel .wf-others-toggle {
+  margin-top: 8px; width: 100%; text-align: left; font-size: 11px;
+  color: rgba(255,255,255,.45); padding: 2px 0;
+}
+.canvas-workflow-panel .wf-others-toggle:hover { color: rgba(255,255,255,.75); background: transparent; }

@@ -1,0 +1,24 @@
+[project]
+name = "anima-kokoro"
+version = "0.1.0"
+description = "Kokoro TTS 的 OpenAI 兼容服务，走 Metal/MPS，不用 Docker"
+# kokoro / misaki 在 3.13+ 上依赖链还没跟上，锁 3.12
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "kokoro>=0.9.4",
+    # 中文 G2P。zf_* / zm_* 这些中文音色必须要它，否则中文会被当成
+    # 英文字母念，或者直接静音
+    "misaki[zh]>=0.9.4",
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "soundfile>=0.13",
+    "torch>=2.6",
+]
+
+# 2026-09-08 移除哼唱链路时一并去掉了 `pyworld` 和 `setuptools<81`：
+# 那两条只为 WORLD 声码器（sing.py）而在，setuptools 的上锁更是 pyworld
+# 自己还在 import pkg_resources 留下的历史包袱。唱歌没了，锁也就没必要了。
+
+[tool.uv]
+# torch 在 macOS 上的 wheel 自带 MPS 后端，不需要额外 index
+package = false

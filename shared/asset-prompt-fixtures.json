@@ -1,0 +1,881 @@
+{
+ "contracts": {
+  "none": null,
+  "anchors": {
+   "shape": "",
+   "zones": [],
+   "relations": [],
+   "materials": [],
+   "views": [],
+   "inferred": [],
+   "no_extra": [],
+   "empty_stage": "required",
+   "entrances": [
+    {
+     "name": "殿门",
+     "connects_to": ""
+    }
+   ],
+   "anchors": [
+    {
+     "name": "朱红巨柱",
+     "zone": "",
+     "size": "wall_dominant",
+     "must_not_become": []
+    },
+    {
+     "name": "龙椅",
+     "zone": "",
+     "size": "large",
+     "must_not_become": []
+    },
+    {
+     "name": "香炉",
+     "zone": "",
+     "size": "small",
+     "must_not_become": []
+    },
+    {
+     "name": "御案",
+     "zone": "",
+     "size": "medium",
+     "must_not_become": []
+    }
+   ]
+  },
+  "one": {
+   "shape": "",
+   "zones": [],
+   "relations": [],
+   "materials": [],
+   "views": [],
+   "inferred": [],
+   "no_extra": [],
+   "empty_stage": "required",
+   "entrances": [],
+   "anchors": [
+    {
+     "name": "柜台",
+     "zone": "",
+     "size": "large",
+     "must_not_become": []
+    }
+   ]
+  }
+ },
+ "cases": [
+  {
+   "fn": "flatten_description",
+   "args": {
+    "description": ""
+   },
+   "out": ""
+  },
+  {
+   "fn": "flatten_description",
+   "args": {
+    "description": "描述：盛唐女官，女性，28岁。\n服装：上衣男装官服，下装官服下摆。\n特征：黑眼圈明显。"
+   },
+   "out": "盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。"
+  },
+  {
+   "fn": "flatten_description",
+   "args": {
+    "description": "白须，青灰长衫"
+   },
+   "out": "白须，青灰长衫"
+  },
+  {
+   "fn": "screen_hint",
+   "args": {
+    "name": "手机",
+    "description": "屏幕亮起显示提示"
+   },
+   "out": "屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上"
+  },
+  {
+   "fn": "screen_hint",
+   "args": {
+    "name": "电脑",
+    "description": "旧款台式机"
+   },
+   "out": "屏幕熄灭，黑色玻璃面反光"
+  },
+  {
+   "fn": "screen_hint",
+   "args": {
+    "name": "铜壶",
+    "description": "黄铜"
+   },
+   "out": ""
+  },
+  {
+   "fn": "screen_hint",
+   "args": {
+    "name": "laptop",
+    "description": "screen showing messages"
+   },
+   "out": "屏幕熄灭，黑色玻璃面反光"
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "林婉清",
+    "description": "描述：盛唐女官，女性，28岁。\n服装：上衣男装官服，下装官服下摆。\n特征：黑眼圈明显。",
+    "template": "avatar"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "avatar"
+   },
+   "out": "full body, standing pose, turnaround sheet, multiple views, multiple separate images, human figure, torso, arms, legs, clothing, shoes, photorealistic human, panel borders, frames, text, watermark"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "林婉清",
+    "description": "描述：盛唐女官，女性，28岁。\n服装：上衣男装官服，下装官服下摆。\n特征：黑眼圈明显。",
+    "template": "simple"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "simple"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "林婉清",
+    "description": "描述：盛唐女官，女性，28岁。\n服装：上衣男装官服，下装官服下摆。\n特征：黑眼圈明显。",
+    "template": "detailed"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "detailed"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "林婉清",
+    "description": "描述：盛唐女官，女性，28岁。\n服装：上衣男装官服，下装官服下摆。\n特征：黑眼圈明显。",
+    "template": "panel5"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "panel5"
+   },
+   "out": "text paragraphs, info panel, stat block, watermark, UI overlay, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "林婉清",
+    "description": "描述：盛唐女官，女性，28岁。\n服装：上衣男装官服，下装官服下摆。\n特征：黑眼圈明显。",
+    "template": "quadzh"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。"
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "quadzh"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "林婉清，盛唐女官，女性，28岁。上衣男装官服，下装官服下摆。黑眼圈明显。\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。"
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "皇帝",
+    "description": "",
+    "template": "avatar"
+   },
+   "out": "皇帝\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "avatar"
+   },
+   "out": "full body, standing pose, turnaround sheet, multiple views, multiple separate images, human figure, torso, arms, legs, clothing, shoes, photorealistic human, panel borders, frames, text, watermark"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "皇帝，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "皇帝\n\nComposition: a single centered avatar icon on a plain neutral background, front-facing, symmetrical, filling most of the frame. This subject has NO body: do not draw a torso, arms, legs, clothing, shoes or a standing pose. Do not draw a turnaround sheet, multiple views, panels or borders. Flat even lighting, clean silhouette, crisp edges, suitable for display on a screen."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "皇帝",
+    "description": "",
+    "template": "simple"
+   },
+   "out": "皇帝\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "simple"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "皇帝，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "皇帝\n\nComposition: character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left half: large head close-up portrait (shoulders up, sharp facial details, front-facing, detailed skin texture). Right half: three equally-sized full-body standing poses arranged side by side (front view, side view, back view), head-to-toe fully visible, relaxed neutral pose. Consistent soft studio lighting across all views, no harsh shadows, even illumination."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "皇帝",
+    "description": "",
+    "template": "detailed"
+   },
+   "out": "皇帝\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "detailed"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "皇帝，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "皇帝\n\nComposition: detailed character reference sheet, single unified image, seamless layout without borders or frames, neutral gray background. Left section: three full-body standing views side by side (front / side / back), head-to-toe visible, neutral relaxed pose. Upper right: large face close-up portrait (shoulders up, detailed skin texture, sharp eyes, pores visible). Lower right: three smaller head shots showing different angles (front, three-quarter, profile). Consistent soft studio lighting, no harsh shadows, even illumination across all panels."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "皇帝",
+    "description": "",
+    "template": "panel5"
+   },
+   "out": "皇帝\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "panel5"
+   },
+   "out": "text paragraphs, info panel, stat block, watermark, UI overlay, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "皇帝，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "皇帝\n\nKeep the same character identity across every panel. Composition: professional character design sheet, single unified image with dark neutral background (deep charcoal with a subtle gradient). Layout divided into labeled panels with thin border frames: - Top left: large dramatic character portrait (bust shot, three-quarter angle, moody rim lighting), unlabeled - Center: exactly three full-body standing views and no other figures in this row (front / side / back), labeled \"正面\" \"侧面\" \"背面\" - Top right: 4 expression close-ups in a row (calm, smiling, angry, surprised), labeled \"表情特写\" - Bottom left: 3-4 detail close-up panels showing the hands, the footwear, a collar and fastening detail, a belt or pocket detail, labeled \"细节特写\". Cinematic lighting, high detail, concept art quality, game character sheet aesthetic. Do not create an information table, stats card, UI panel, watermark, or extra character body."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "character",
+    "name": "皇帝",
+    "description": "",
+    "template": "quadzh"
+   },
+   "out": "皇帝\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。"
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "character",
+    "template": "quadzh"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames, multiple separate images"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "皇帝，live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "皇帝\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "character"
+   },
+   "out": "皇帝\n\n高质量专业角色设定图，横向构图，纯白色纯净背景，中性摄影棚灯光，平光布光。布局结构（必须是角色四视图）：正面面部头部特写（占图片水平 1/3 的空间，**竖向放大，从头顶到胸口占满这一栏的完整高度**）＋ 全身正面视图、全身左侧面视图、全身背面视图（三个并列排列，占图片水平剩余的 2/3 的空间），四个视图之间用淡灰色(#E2E2E2)的 2px 细线分割。光影：柔和的前侧光，清晰的轮廓定义，自然的肤色，面部清晰、服装可辨识，平视镜头，完整全身，无裁剪。确保所有视图中的面部特征、发型、体型和服装保持一致。不得出现任何道具、武器、食物、饮料、手持物（角色必须空手）；不得出现复杂动作、情绪表情、面部遮挡；不得出现环境背景（仅纯白）；不得出现其他角色；不得出现文字、水印、标签、UI 元素；不得过度风格化。不得出现第二个头像或第二个身体。"
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "scene",
+    "name": "金銮殿",
+    "description": "描述：盛唐大殿，金色龙柱",
+    "template": "simple"
+   },
+   "out": "金銮殿，盛唐大殿，金色龙柱\n\nComposition: wide establishing shot of the environment on neutral gray background, single unified image, no figures in foreground. Emphasize atmosphere, architecture and terrain structure. Lighting and color palette match the scene mood. Soft volumetric lighting, depth of field."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "scene",
+    "template": "simple"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "金銮殿，盛唐大殿，金色龙柱\n\nComposition: wide establishing shot of the environment on neutral gray background, single unified image, no figures in foreground. Emphasize atmosphere, architecture and terrain structure. Lighting and color palette match the scene mood. Soft volumetric lighting, depth of field.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "scene"
+   },
+   "out": "金銮殿，盛唐大殿，金色龙柱，cinematic lighting, 35mm film grain, 温暖色调\n\nComposition: wide establishing shot of the environment on neutral gray background, single unified image, no figures in foreground. Emphasize atmosphere, architecture and terrain structure. Lighting and color palette match the scene mood. Soft volumetric lighting, depth of field."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "金銮殿，盛唐大殿，金色龙柱\n\nComposition: wide establishing shot of the environment on neutral gray background, single unified image, no figures in foreground. Emphasize atmosphere, architecture and terrain structure. Lighting and color palette match the scene mood. Soft volumetric lighting, depth of field.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "scene"
+   },
+   "out": "金銮殿，盛唐大殿，金色龙柱\n\nComposition: wide establishing shot of the environment on neutral gray background, single unified image, no figures in foreground. Emphasize atmosphere, architecture and terrain structure. Lighting and color palette match the scene mood. Soft volumetric lighting, depth of field."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "prop",
+    "name": "手机",
+    "description": "屏幕亮起显示提示",
+    "template": "simple"
+   },
+   "out": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "prop",
+    "template": "simple"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "prop"
+   },
+   "out": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上，cinematic lighting, 35mm film grain, 温暖色调\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "prop"
+   },
+   "out": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "prop",
+    "name": "手机",
+    "description": "屏幕亮起显示提示",
+    "template": "propcard"
+   },
+   "out": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“手机”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。"
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "prop",
+    "template": "propcard"
+   },
+   "out": "watermark, signature, people, hands, human body, multiple separate images, cropped object"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“手机”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "prop"
+   },
+   "out": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上，cinematic lighting, 35mm film grain, 温暖色调\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“手机”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“手机”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "prop"
+   },
+   "out": "手机，屏幕亮起显示提示。屏幕画面是纯界面：几行文字通知，每行前面一个蓝色小圆点，界面平铺在屏幕上\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“手机”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。"
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "prop",
+    "name": "铜壶",
+    "description": "黄铜，壶嘴弯",
+    "template": "simple"
+   },
+   "out": "铜壶，黄铜，壶嘴弯\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object."
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "prop",
+    "template": "simple"
+   },
+   "out": "text, labels, watermark, UI overlay, panel borders, frames"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "铜壶，黄铜，壶嘴弯\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "prop"
+   },
+   "out": "铜壶，黄铜，壶嘴弯，cinematic lighting, 35mm film grain, 温暖色调\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object."
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "铜壶，黄铜，壶嘴弯\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object.",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "prop"
+   },
+   "out": "铜壶，黄铜，壶嘴弯\n\nComposition: product photography style on neutral gray background, single unified image, seamless layout without borders. The object alone is the only thing in the frame. Main view: object centered at slight angle. Secondary views: detail close-ups of material and texture. Clean even studio lighting, subtle shadow beneath object."
+  },
+  {
+   "fn": "build_prompt",
+   "args": {
+    "kind": "prop",
+    "name": "铜壶",
+    "description": "黄铜，壶嘴弯",
+    "template": "propcard"
+   },
+   "out": "铜壶，黄铜，壶嘴弯\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“铜壶”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。"
+  },
+  {
+   "fn": "template_negative",
+   "args": {
+    "kind": "prop",
+    "template": "propcard"
+   },
+   "out": "watermark, signature, people, hands, human body, multiple separate images, cropped object"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "铜壶，黄铜，壶嘴弯\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“铜壶”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "prop"
+   },
+   "out": "铜壶，黄铜，壶嘴弯，cinematic lighting, 35mm film grain, 温暖色调\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“铜壶”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "铜壶，黄铜，壶嘴弯\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“铜壶”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": false,
+    "kind": "prop"
+   },
+   "out": "铜壶，黄铜，壶嘴弯\n\nUse case: stylized-concept\nAsset type: 道具三视图设定卡\nPrimary request: 生成“铜壶”的高精度三视图道具卡，外观严格按上面的描述。\nScene/backdrop: 冷白略带浅蓝的无缝工业设计图背景，细灰蓝辅助线和分区线，无环境场景。\nStyle/medium: 高精度 3D 半写实工业产品渲染，美术资产生产图。\nComposition/framing: 16:9 横向设定卡。上排从左到右是 FRONT 正面、SIDE 严格90度侧面、BACK 背面，比例一致、无遮挡。下排两个大特写框：左右各放大展示这件道具最有辨识度的一处结构或细节（材质、机构、刻印或标签），每个框下方用简短的英文大写标注这处细节的名称。主体占比适中，边缘完整，不裁切。\nLighting/mood: 冷白柔光、轻微轮廓光，金属反射克制，严谨、洁净。\nText (verbatim): “FRONT”, “SIDE”, “BACK”；道具本身上的文字、编号照描述原样写。\nConstraints: 必须是同一个道具的严格三视图；正侧背结构相互对应；这是独立道具卡，画面里只有这一件道具本身；所有小字尽量准确、清晰、简洁；除三视图标注、两个特写框的标注和道具本身的文字外，画面里只有干净的背景和辅助线。"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "一段没有空行的提示词",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "character"
+   },
+   "out": "一段没有空行的提示词, live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻"
+  },
+  {
+   "fn": "final_positive",
+   "args": {
+    "prompt": "",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻",
+    "apply": true,
+    "kind": "scene"
+   },
+   "out": "cinematic lighting, 35mm film grain, 温暖色调"
+  },
+  {
+   "fn": "style_for_kind",
+   "args": {
+    "kind": "character",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻"
+   },
+   "out": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻"
+  },
+  {
+   "fn": "style_for_kind",
+   "args": {
+    "kind": "scene",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻"
+   },
+   "out": "cinematic lighting, 35mm film grain, 温暖色调"
+  },
+  {
+   "fn": "style_for_kind",
+   "args": {
+    "kind": "prop",
+    "style": "live-action film still, natural human proportions, realistic skin texture, cinematic lighting, 35mm film grain, 温暖色调, 人物表情细腻"
+   },
+   "out": "cinematic lighting, 35mm film grain, 温暖色调"
+  },
+  {
+   "fn": "final_negative",
+   "args": {
+    "style": "blurry, lowres",
+    "composition": "text, labels",
+    "apply": true
+   },
+   "out": "blurry, lowres, text, labels"
+  },
+  {
+   "fn": "final_negative",
+   "args": {
+    "style": "blurry",
+    "composition": "",
+    "apply": false
+   },
+   "out": ""
+  },
+  {
+   "fn": "character_template_for",
+   "args": {
+    "engine": "zimage"
+   },
+   "out": "quadzh"
+  },
+  {
+   "fn": "character_template_for",
+   "args": {
+    "engine": "krea2"
+   },
+   "out": "simple"
+  },
+  {
+   "fn": "character_template_for",
+   "args": {
+    "engine": "sdxl"
+   },
+   "out": "simple"
+  },
+  {
+   "fn": "template_aspect",
+   "args": {
+    "template": "avatar"
+   },
+   "out": "square"
+  },
+  {
+   "fn": "template_aspect",
+   "args": {
+    "template": "simple"
+   },
+   "out": "portrait"
+  },
+  {
+   "fn": "template_aspect",
+   "args": {
+    "template": "detailed"
+   },
+   "out": "portrait"
+  },
+  {
+   "fn": "template_aspect",
+   "args": {
+    "template": "panel5"
+   },
+   "out": "landscape"
+  },
+  {
+   "fn": "template_aspect",
+   "args": {
+    "template": "quadzh"
+   },
+   "out": "landscape"
+  },
+  {
+   "fn": "default_viewpoints",
+   "args": {
+    "contract": "none"
+   },
+   "out": [
+    {
+     "name": "正面中心线",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。镜头正对场景中心轴，构图严格居中对称，画面同时包含顶面与底面；视线尽头是最显眼的那个不可移动物"
+    },
+    {
+     "name": "左前 45°",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**以第 1 格的中心线为参考**，摄像机移动到场景**左前方 45 度**，画面主体换成**最显眼的那个不可移动物**那一侧的墙面和陈设，空间连贯、比例一致；**画面里看不到最显眼的那个不可移动物**"
+    },
+    {
+     "name": "右前 45°",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**以第 1 格的中心线为参考**，摄像机移动到场景**右前方 45 度**，画面主体换成**最显眼的那个不可移动物**那一侧的墙面和陈设，空间连贯、比例一致；**画面里看不到最显眼的那个不可移动物**"
+    },
+    {
+     "name": "深处往外",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**镜头站在室内最深处向外拍摄**，画面主体是**主入口和门外透进来的天光**，以及入口两侧的墙；**画面里看不到最显眼的那个不可移动物**（镜头就站在它那儿）。这一格的进光方向和前几格相反 —— 前几格朝暗处看，这一格朝亮处看"
+    }
+   ]
+  },
+  {
+   "fn": "default_viewpoints",
+   "args": {
+    "contract": "anchors"
+   },
+   "out": [
+    {
+     "name": "正面中心线",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。镜头正对场景中心轴，构图严格居中对称，画面同时包含顶面与底面；视线尽头是龙椅"
+    },
+    {
+     "name": "左前 45°",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**以第 1 格的中心线为参考**，摄像机移动到场景**左前方 45 度**，画面主体换成**朱红巨柱**那一侧的墙面和陈设，空间连贯、比例一致；**画面里看不到龙椅**"
+    },
+    {
+     "name": "右前 45°",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**以第 1 格的中心线为参考**，摄像机移动到场景**右前方 45 度**，画面主体换成**御案**那一侧的墙面和陈设，空间连贯、比例一致；**画面里看不到龙椅**"
+    },
+    {
+     "name": "深处往外",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**镜头站在室内最深处向外拍摄**，画面主体是**殿门和门外透进来的天光**，以及入口两侧的墙；**画面里看不到龙椅**（镜头就站在它那儿）。这一格的进光方向和前几格相反 —— 前几格朝暗处看，这一格朝亮处看"
+    }
+   ]
+  },
+  {
+   "fn": "default_viewpoints",
+   "args": {
+    "contract": "one"
+   },
+   "out": [
+    {
+     "name": "正面中心线",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。镜头正对场景中心轴，构图严格居中对称，画面同时包含顶面与底面；视线尽头是柜台"
+    },
+    {
+     "name": "左前 45°",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**以第 1 格的中心线为参考**，摄像机移动到场景**左前方 45 度**，画面主体换成**柜台**那一侧的墙面和陈设，空间连贯、比例一致；**画面里看不到柜台**"
+    },
+    {
+     "name": "右前 45°",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**以第 1 格的中心线为参考**，摄像机移动到场景**右前方 45 度**，画面主体换成**柜台**那一侧的墙面和陈设，空间连贯、比例一致；**画面里看不到柜台**"
+    },
+    {
+     "name": "深处往外",
+     "description": "大远景，交代环境全貌，平视，与主体视线同高，24mm 广角，深景深，前后都清楚。**镜头站在室内最深处向外拍摄**，画面主体是**主入口和门外透进来的天光**，以及入口两侧的墙；**画面里看不到柜台**（镜头就站在它那儿）。这一格的进光方向和前几格相反 —— 前几格朝暗处看，这一格朝亮处看"
+    }
+   ]
+  }
+ ]
+}

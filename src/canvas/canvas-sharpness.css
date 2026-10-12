@@ -1,0 +1,103 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   画布文字抗锯齿、WebKit 缩放防发虚与白灰质感流动光带
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* 1. 视口与节点渲染抗锯齿：解除 WebKit 在 scale 缩放时的位图缓存，强制矢量高精度渲染 */
+.react-flow__viewport {
+  transform-style: flat;
+  backface-visibility: hidden;
+}
+
+.react-flow__node {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
+  transform-style: flat;
+  will-change: auto !important;
+}
+
+.react-flow__node * {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
+}
+
+.react-flow__node input,
+.react-flow__node textarea,
+.react-flow__node span,
+.react-flow__node p,
+.react-flow__node button {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
+}
+
+/* 2. 白灰优雅连线与流动光带 (对齐 DramaClaw / LiblibTV 原生高级质感) */
+.react-flow__edge-path {
+  stroke: rgba(176, 176, 183, 0.45) !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
+}
+
+/* Saved workflows also contain animated edges. Keep them static at rest so a
+   large idle graph does not repaint every SVG path continuously. */
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: none;
+  animation: none;
+}
+
+/* 跑着、悬停、选中都**不变虚线**（用户 2026-09-25：「工作流开始后变成了虚线」「悬浮后也变成了动态虚线」）。
+   悬停 / 选中 = 实线 + 全线光晕（下面那条）；跑着 = 线上走一颗彗星（CutEdge 画，样式在 CutEdge.css）。 */
+.react-flow__edge.animated.canvas-edge-running .react-flow__edge-path,
+.react-flow__edge.animated:hover .react-flow__edge-path,
+.react-flow__edge.animated.selected .react-flow__edge-path {
+  stroke-dasharray: none;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.animated .react-flow__edge-path {
+    animation: none !important;
+  }
+}
+
+/* 选中或悬停时的强化白灰光效 */
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.9) !important;
+  stroke-width: 2.4 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 9px rgba(255, 255, 255, 0.28)) !important;
+}
+
+/* 3. 一键隐藏连线功能 */
+.hide-canvas-edges .react-flow__edge {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+
+/* 抓手工具（H）：空白处和节点上都显示抓手光标，拖动时变「抓紧」。
+   ReactFlow 自带的光标只在 panOnDrag 命中的空白处生效，节点上还是箭头 ——
+   看着像能拖节点，实际拖的是画布。 */
+.canvas-tool-hand .react-flow__pane,
+.canvas-tool-hand .react-flow__node {
+  cursor: grab !important;
+}
+.canvas-tool-hand .react-flow__pane.dragging,
+.canvas-tool-hand .react-flow__node:active {
+  cursor: grabbing !important;
+}
+
+/* 组节点：清掉 ReactFlow 给 type="group" 自带的样式（灰底、1px 边框、10px 内边距、
+   选中时的 box-shadow）。不清的话，GroupNode 自己画的圆角框外面还套着一层灰方框。 */
+.react-flow__node-group,
+.react-flow__node-group.selectable:hover,
+.react-flow__node-group.selected,
+.react-flow__node-group.selectable.selected {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 18px;
+  box-shadow: none !important;
+}

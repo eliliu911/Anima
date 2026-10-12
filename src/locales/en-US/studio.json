@@ -1,0 +1,37 @@
+{
+  "title": "ComfyUI Creator Studio",
+  "subtitle": "Local ComfyUI · not tied to a project",
+  "online": "ComfyUI Online",
+  "offline": "ComfyUI Offline",
+  "gpu": "GPU: {{name}}",
+  "vram": "VRAM: {{vram}} Available",
+  "tabs": {
+    "companion": "4K Photoreal & Companion Factory",
+    "drama": "AI Movie & Short Drama Factory"
+  },
+  "phases": {
+    "portrait": "Phase 1: Portrait & Sprite Studio (T2I)",
+    "video": "Phase 2: 4D Dynamic Video Studio (I2V 3-Stage Loop)"
+  },
+  "presetTitle": "1. Choose Base Style Preset",
+  "charId": "Character English ID",
+  "charName": "Display Name",
+  "promptTags": "Quick Appearance/Scene Prompts",
+  "posPrompt": "Positive Prompt",
+  "negPrompt": "Negative Prompt",
+  "checkpoint": "Model Checkpoint",
+  "seed": "Seed",
+  "randomSeed": "Random Seed",
+  "sendRender": "Send to ComfyUI for 4K Portrait Render",
+  "previewTitle": "2. Portrait Result Preview & Transition",
+  "waitingPortrait": "Waiting to Render Portrait",
+  "waitingPortraitDesc": "Configure left options and click render. 4K portrait will appear here, ready for one-click 4D video conversion.",
+  "navWorkspace": "Workspace",
+  "navLibrary": "Asset Library",
+  "navScript": "Script Editor",
+  "navCanvas": "Canvas",
+  "navWorkbench": "Workbench",
+  "navSettings": "Settings",
+  "navOld": "Legacy",
+  "navTodo": "WIP"
+}

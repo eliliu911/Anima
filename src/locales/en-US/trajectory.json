@@ -1,0 +1,15 @@
+{
+  "summary": {
+    "thinking": "Thinking...",
+    "working": "Executing tools...",
+    "completed": "Execution completed"
+  },
+  "verbs": {
+    "read": "Read",
+    "ran": "Ran",
+    "edited": "Edited",
+    "dispatched": "Dispatched",
+    "generated": "Generated",
+    "called": "Called"
+  }
+}

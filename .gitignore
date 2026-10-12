@@ -1,0 +1,65 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+.DS_Store
+*.log
+
+# 本地 API Key，绝不提交
+.env.local
+.env*.local
+
+# Claude Code 本地设置（可能含命令历史）
+.claude/settings.local.json
+
+# 编辑器 / 系统杂物
+.vscode/
+.idea/
+*.swp
+
+# 其它工具留下的截图产物
+.codex-hud-check*.png
+
+# Kokoro 原生环境（torch 约 2.5G，uv sync 可重建）
+tools/kokoro-native/.venv/
+tools/kokoro-native/uv.lock
+
+# F5-TTS / GPT-SoVITS 的本地环境与权重（uv sync 可重建，权重要重新下）
+tools/f5-tts/.venv/
+
+tools/gpt-sovits/upstream/
+
+# 音色库：零样本克隆的参考音频与素材库。
+#
+# **必须忽略内容但保留 README。** 素材动辄 1~2GB（语音包），一旦被 commit
+# 就很难从 git 历史里清掉；而目录的约定本身值得留在仓库里，
+# 换机器时照着 README 重建即可。
+/voice-library/*
+!/voice-library/README.md
+
+# 3D 面容模型（几十 MB 的个人素材，只留 README）
+avatars/*
+!avatars/README.md
+
+# 动作库（.vrma）。和面容同理：素材不进版本库，只放行说明
+animations/*
+!animations/README.md
+
+# Python 字节码
+__pycache__/
+*.pyc
+
+# wav2lip 权重（214MB，自行放入）
+tools/digital-human/models/
+tools/digital-human/.venv/
+tools/digital-human/.cache/
+
+# Anima 影子工作区与本地沙箱产物
+.anima/
+
+# SHARP（Apple ml-sharp）是 clone 进来的上游仓库 + 一个 uv venv，不进我们的库。
+# 重建：git clone --depth 1 https://github.com/apple/ml-sharp.git && uv venv --python 3.13 .venv && uv pip install -r requirements.txt
+tools/world/ml-sharp/
+# DA-2（EnVision-Research/DA-2）同样是 clone 的上游仓库
+# 重建：git clone --depth 1 https://github.com/EnVision-Research/DA-2.git
+tools/world/DA-2/

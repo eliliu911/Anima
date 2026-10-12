@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""最小的假 language server —— 让 LSP 客户端的协议实现能在**不装任何真实
+language server** 的前提下被测到。
+
+它故意设了几道坎，对应 LSP 客户端曾经真实踩过的坑：
+
+  * 回答 definition 前先塞一条通知和一条 id 错配的响应
+    —— 客户端必须跳过它们，而不是把第一条消息当成答案；
+  * 没收到 `textDocument/didOpen` 就返回 null
+    —— 模拟 typescript-language-server 的行为；
+  * 工作区里存在 `INDEXING` 文件时，先发 `$/progress` begin 再返回空数组
+    —— 模拟 rust-analyzer 索引期「返回空而不是错误」，
+       客户端必须把它和「确实没有定义」区分开。
+
+以 cwd（即工作区根目录）里的 `INDEXING` / `.didopen` 文件传递状态，而不是环境变量，
+因为服务器进程是**спawn 一次缓存复用**的，父进程改 env 影响不到已经跑起来的子进程。
+"""
+import sys, json, os
+
+if "--version" in sys.argv:
+    print("fake-lsp 1.0")
+    sys.exit(0)
+
+DIDOPEN = ".didopen"
+INDEXING = "INDEXING"
+
+
+def read():
+    n = 0
+    while True:
+        line = sys.stdin.buffer.readline()
+        if not line:
+            return None
+        if line.lower().startswith(b"content-length:"):
+            n = int(line.split(b":")[1])
+        if line in (b"\r\n", b"\n"):
+            break
+    return json.loads(sys.stdin.buffer.read(n))
+
+
+def send(obj):
+    body = json.dumps(obj).encode()
+    sys.stdout.buffer.write(b"Content-Length: %d\r\n\r\n" % len(body) + body)
+    sys.stdout.buffer.flush()
+
+
+def progress(kind):
+    send({"jsonrpc": "2.0", "method": "$/progress",
+          "params": {"token": "fake/Indexing", "value": {"kind": kind, "title": "Indexing"}}})
+
+
+while True:
+    msg = read()
+    if msg is None:
+        break
+    method = msg.get("method")
+
+    if method == "initialize":
+        send({"jsonrpc": "2.0", "id": msg["id"],
+              "result": {"capabilities": {"definitionProvider": True, "referencesProvider": True}}})
+
+    elif method == "textDocument/didOpen":
+        with open(DIDOPEN, "w") as f:
+            f.write(msg["params"]["textDocument"].get("text", "")[:80])
+
+    elif method in ("textDocument/definition", "textDocument/references"):
+        if os.path.exists(INDEXING):
+            # 模拟"刚拉起来还没就绪"：先答几次空，再给真答案。
+            # 真实 rust-analyzer 就是这样 —— 实测 12 行的 crate 约 1.6s 才答得出，
+            # 在那之前一律返回空（不是错误）。客户端必须重试，
+            # 否则会把空结果当成"这个符号没有定义"报给模型。
+            n = int(open(INDEXING).read() or "0") + 1
+            open(INDEXING, "w").write(str(n))
+            if n <= 2:
+                progress("begin")
+                send({"jsonrpc": "2.0", "id": msg["id"], "result": []})
+                continue
+        progress("end")
+        send({"jsonrpc": "2.0", "method": "window/logMessage",
+              "params": {"type": 3, "message": "noise"}})
+        send({"jsonrpc": "2.0", "id": 999999, "result": None})
+        if not os.path.exists(DIDOPEN):
+            send({"jsonrpc": "2.0", "id": msg["id"], "result": None})
+            continue
+        uri = msg["params"]["textDocument"]["uri"]
+        send({"jsonrpc": "2.0", "id": msg["id"], "result": [
+            {"uri": uri, "range": {"start": {"line": 4, "character": 7},
+                                   "end": {"line": 4, "character": 11}}}]})

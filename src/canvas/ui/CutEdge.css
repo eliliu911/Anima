@@ -1,0 +1,39 @@
+/* 选中节点时它的连线（照 LibTV）：底下那根变亮，上面走一颗蓝色彗星。
+   canvas-sharpness.css 给连线颜色加了 !important、React Flow 的 animated 规则会改虚线和动画 ——
+   这里的选择器都写得更具体并带 !important，否则被盖掉（2026-09-25 在画布调试台里查实） */
+.react-flow__edge .react-flow__edge-path.canvas-edge-active {
+  stroke: rgba(230, 232, 236, 0.9) !important;
+}
+
+/* 悬停：实线 + 全线光晕。鼠标挪到剪刀上时连线自己的 :hover 就没了（剪刀在 HTML 层），
+   所以跟着组件的 hover 状态（剪刀显示期间一直在）加类名，光晕不会一碰剪刀就灭 */
+.react-flow__edge .react-flow__edge-path.canvas-edge-hover {
+  stroke: rgba(255, 255, 255, 0.9) !important;
+  stroke-width: 2.4 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 9px rgba(255, 255, 255, 0.28)) !important;
+}
+
+/* 彗星（CutEdge 的 Comet）：头上加一圈蓝色光晕。层的长度 / 透明度 / 粗细在组件里 */
+.react-flow__edge .canvas-edge-comet {
+  filter: drop-shadow(0 0 2px rgba(96, 165, 250, 0.95)) drop-shadow(0 0 7px rgba(96, 165, 250, 0.55));
+}
+
+/* 系统开了「减少动态效果」：回到旧样式，只有实线和虚线（组件按系统设置挂 canvas-edge-plain）。
+   - 不要任何光晕：盖掉 canvas-sharpness.css 里悬停 / 选中的 drop-shadow（多写一个 .react-flow__edge 压过它的优先级）
+   - 选中节点 / 节点在跑：那几根线是移动的虚线。canvas-sharpness.css 在这个媒体条件下给所有连线写了
+     animation: none !important，这里选择器更具体，才压得过 */
+.react-flow__edge.react-flow__edge .react-flow__edge-path.canvas-edge-plain {
+  filter: none !important;
+}
+.react-flow__edge.react-flow__edge .react-flow__edge-path.canvas-edge-plain.canvas-edge-dash {
+  stroke: rgba(230, 232, 236, 0.9) !important;
+  stroke-dasharray: 4 6 !important;
+  animation: canvas-edge-dash-move 0.8s linear infinite !important;
+}
+@keyframes canvas-edge-dash-move {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* 「隐藏连线」时光点也要藏起来 */
+.hide-canvas-edges .canvas-edge-comet { display: none; }

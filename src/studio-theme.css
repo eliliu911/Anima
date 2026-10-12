@@ -1,0 +1,1113 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Anima Studio 的视觉 token。
+
+   结构（类名、层级、玻璃质感）来自 LumenX（阿里，MIT），
+   **颜色全部是 Anima 自己的**：值直接引用 `theme.css` 里的系统色，
+   不复制一份。改主题一处，这里跟着走。
+
+   一开始确实是整套抄的（青绿主色 + 橘黄强调 + 暖石墨底），
+   结果整屏偏黄偏暖，和 Anima 的冷石板 + 天蓝是两个方向。
+   token 化的意义就在这儿：换配色只动值，结构和类名一个不用改。
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── 色板 ────────────────────────────────────────────────────────────────────
+   **值全部引用 `theme.css` 里 Anima 自己的系统色**，不再复制一份。
+   改主题一处，Studio 跟着走 —— 这才叫对齐。
+
+   原来抄的是参考项目那套（青绿 + 橘黄 + 暖石墨），整屏偏黄偏暖，
+   和 Anima 的冷石板 + 天蓝完全是两个方向。
+
+   浅色是默认值，深色在 `prefers-color-scheme` 里覆盖 ——
+   和 `theme.css` 一个结构。手动开关写 `<html>` 上的 `data-theme`，
+   **主界面和 Studio 一起翻**。
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.anima-studio {
+  color-scheme: light;
+
+  /* **主色直接引用 Anima 系统色**，不再复制一份。
+     改 `theme.css` 一处，Studio 跟着走 —— 这才叫对齐。 */
+  --seed-primary: var(--celadon);
+  --seed-primary-2: var(--celadon);
+  /* 「强调色」原来是橘黄（从参考项目抄来的），整屏看着发黄。
+     换成 Anima 的石板灰 —— 氛围光只要一点冷色差，不需要第二个亮色。 */
+  --seed-accent: var(--desk-2);
+  --seed-accent-2: var(--desk-1);
+
+  --studio-bg-base: var(--surface);
+  --studio-bg-base-2: var(--surface-2);
+  --studio-bg-surface: var(--paper);
+  /* 浅色下「更高一层」靠阴影表达，不靠更白 —— 白之上没有更白。 */
+  --studio-bg-elevated: var(--paper);
+  --studio-bg-inset: var(--surface-2);
+  --studio-chrome-bg: var(--surface-2);
+  --studio-bg-input: var(--input-bg);
+  --studio-bg-hover: rgba(17, 24, 39, 0.05);
+  --studio-glass: rgba(255, 255, 255, 0.6);
+  --studio-overlay: rgba(17, 24, 39, 0.32);
+
+  --studio-border: var(--line);
+  --studio-border-subtle: rgba(17, 24, 39, 0.06);
+
+  --studio-text: var(--ink);
+  --studio-text-2: var(--ink-2);
+  --studio-text-muted: var(--ink-3);
+
+  /* 别名：把 seed 转成语义名。**这几行不能省** ——
+     省掉的话 `var(--studio-primary)` 解析成空，用到它的
+     `color-mix()` 整条失效，背景直接塌成透明（白底白字）。 */
+  --studio-primary: var(--seed-primary);
+  --studio-primary-hover: var(--seed-primary-2);
+  --studio-accent: var(--seed-accent);
+  --studio-accent-2: var(--seed-accent-2);
+  --studio-on-accent: #ffffff;
+  --studio-on-primary: #ffffff;
+
+  /* 封面渐变的两端。**两套主题都保持偏暗** —— 封面是「图片位」，
+     上面压着白字；跟着主题变浅的话白字就没了，而且不报错。 */
+  --studio-cover-1: #2b3138;
+  --studio-cover-2: #12161a;
+
+  --studio-danger: var(--clay);
+  --studio-on-danger: #ffffff;
+  --studio-modal-bg: rgba(255, 255, 255, 0.88);
+  --studio-modal-border: rgba(17, 24, 39, 0.1);
+  --studio-scrim: rgba(17, 24, 39, 0.26);
+  --studio-shadow-lift: 0 12px 32px -14px rgba(17, 24, 39, 0.22);
+  --studio-shadow-modal: 0 32px 80px -26px rgba(17, 24, 39, 0.3);
+  --studio-inset-hairline: rgba(17, 24, 39, 0.04);
+
+  /* 任务状态。**语义 token，不要在组件里写具体色** ——
+     全部落在 Anima 自己的四个语义色上：天蓝 / 琥珀 / 绿 / 赤。 */
+  --studio-pending-fg: var(--celadon);
+  --studio-pending-bd: color-mix(in srgb, var(--celadon) 40%, transparent);
+  --studio-pending-bg: color-mix(in srgb, var(--celadon) 10%, transparent);
+  --studio-running-fg: var(--amber);
+  --studio-running-bd: color-mix(in srgb, var(--amber) 40%, transparent);
+  --studio-running-bg: color-mix(in srgb, var(--amber) 10%, transparent);
+  --studio-done-fg: oklch(0.52 0.13 165);
+  --studio-done-bd: oklch(0.52 0.15 165 / 0.4);
+  --studio-done-bg: oklch(0.52 0.15 165 / 0.09);
+  /* 出片链路角标（用户 2026-10-08：灰色像「没生效」；红绿已被问题 / 完成占了）—— 首帧蓝、参考紫 */
+  --studio-route-keyframe-fg: oklch(0.52 0.15 250);
+  --studio-route-reference-fg: oklch(0.52 0.17 305);
+  --studio-failed-fg: var(--clay);
+  --studio-failed-bd: color-mix(in srgb, var(--clay) 40%, transparent);
+  --studio-failed-bg: color-mix(in srgb, var(--clay) 10%, transparent);
+
+  /* 底色是**渐变**，不是一块平色。平色在大面积上会显得很死。 */
+  background:
+    linear-gradient(168deg, var(--studio-bg-base) 0%, var(--studio-bg-base-2) 100%);
+  background-attachment: fixed;
+  color: var(--studio-text);
+}
+
+/* 深色。**由 `<html>` 上的 `data-theme` 决定，不是 `.anima-studio` 自己那一层。**
+   Studio 的 token 引用的是 `theme.css` 里 `:root` 上的系统色 ——
+   只翻自己这一层的话，会得到「深色 token + 浅色系统色」，一半黑一半白。 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .anima-studio {
+  color-scheme: dark;
+
+    --seed-primary: var(--celadon);
+    --seed-primary-2: var(--celadon);
+    --seed-accent: var(--desk-1);
+    --seed-accent-2: var(--desk-2);
+
+    /* 四档就是 Anima 自己那把梯子，只在最暗那一档往下补了一级：
+       inset #0e1013 < surface #121417 < paper #1B1E22 < surface-3 #262A30 */
+    --studio-bg-base: var(--surface);
+    --studio-bg-base-2: var(--surface-2);
+    --studio-bg-surface: var(--paper);
+    --studio-bg-elevated: var(--surface-3);
+    --studio-bg-inset: #0e1013;
+    --studio-chrome-bg: #0e1013;
+    --studio-bg-input: var(--input-bg);
+    --studio-bg-hover: rgba(255, 255, 255, 0.06);
+    --studio-glass: rgba(255, 255, 255, 0.05);
+    --studio-overlay: rgba(10, 12, 15, 0.78);
+
+    --studio-border: rgba(255, 255, 255, 0.09);
+    --studio-border-subtle: rgba(255, 255, 255, 0.05);
+
+    --studio-text: var(--ink);
+    --studio-text-2: var(--ink-2);
+    --studio-text-muted: var(--ink-3);
+
+    /* 别名：把 seed 转成语义名。**这几行不能省** ——
+     省掉的话 `var(--studio-primary)` 解析成空，用到它的
+     `color-mix()` 整条失效，背景直接塌成透明（白底白字）。 */
+  --studio-primary: var(--seed-primary);
+  --studio-primary-hover: var(--seed-primary-2);
+  --studio-accent: var(--seed-accent);
+  --studio-accent-2: var(--seed-accent-2);
+  --studio-on-accent: #06121c;
+    --studio-on-primary: #06121c;
+
+    --studio-cover-1: #2f363e;
+    --studio-cover-2: #12161a;
+
+    --studio-danger: var(--clay);
+    --studio-on-danger: #0b0e12;
+    --studio-modal-bg: rgba(38, 42, 48, 0.9);
+    --studio-modal-border: rgba(255, 255, 255, 0.1);
+    --studio-scrim: rgba(8, 10, 13, 0.62);
+    --studio-shadow-lift: 0 12px 32px -12px rgba(0, 0, 0, 0.7);
+    --studio-shadow-modal: 0 32px 80px -24px rgba(0, 0, 0, 0.8);
+    --studio-inset-hairline: rgba(255, 255, 255, 0.05);
+
+    --studio-pending-fg: var(--celadon);
+    --studio-pending-bd: color-mix(in srgb, var(--celadon) 45%, transparent);
+    --studio-pending-bg: color-mix(in srgb, var(--celadon) 12%, transparent);
+    --studio-running-fg: var(--amber);
+    --studio-running-bd: color-mix(in srgb, var(--amber) 45%, transparent);
+    --studio-running-bg: color-mix(in srgb, var(--amber) 12%, transparent);
+    --studio-done-fg: oklch(0.82 0.14 165);
+    --studio-done-bd: oklch(0.76 0.16 165 / 0.45);
+    --studio-done-bg: oklch(0.76 0.16 165 / 0.12);
+    --studio-route-keyframe-fg: oklch(0.80 0.12 250);
+    --studio-route-reference-fg: oklch(0.80 0.13 305);
+    --studio-failed-fg: var(--clay);
+    --studio-failed-bd: color-mix(in srgb, var(--clay) 45%, transparent);
+    --studio-failed-bg: color-mix(in srgb, var(--clay) 12%, transparent);
+  }
+}
+
+/* 手动指定深色（侧栏那个开关），值和上面那份一致。 */
+:root[data-theme="dark"] .anima-studio {
+  color-scheme: dark;
+
+  --seed-primary: var(--celadon);
+  --seed-primary-2: var(--celadon);
+  --seed-accent: var(--desk-1);
+  --seed-accent-2: var(--desk-2);
+
+  /* 四档就是 Anima 自己那把梯子，只在最暗那一档往下补了一级：
+     inset #0e1013 < surface #121417 < paper #1B1E22 < surface-3 #262A30 */
+  --studio-bg-base: var(--surface);
+  --studio-bg-base-2: var(--surface-2);
+  --studio-bg-surface: var(--paper);
+  --studio-bg-elevated: var(--surface-3);
+  --studio-bg-inset: #0e1013;
+  --studio-chrome-bg: #0e1013;
+  --studio-bg-input: var(--input-bg);
+  --studio-bg-hover: rgba(255, 255, 255, 0.06);
+  --studio-glass: rgba(255, 255, 255, 0.05);
+  --studio-overlay: rgba(10, 12, 15, 0.78);
+
+  --studio-border: rgba(255, 255, 255, 0.09);
+  --studio-border-subtle: rgba(255, 255, 255, 0.05);
+
+  --studio-text: var(--ink);
+  --studio-text-2: var(--ink-2);
+  --studio-text-muted: var(--ink-3);
+
+  /* 别名：把 seed 转成语义名。**这几行不能省** ——
+     省掉的话 `var(--studio-primary)` 解析成空，用到它的
+     `color-mix()` 整条失效，背景直接塌成透明（白底白字）。 */
+  --studio-primary: var(--seed-primary);
+  --studio-primary-hover: var(--seed-primary-2);
+  --studio-accent: var(--seed-accent);
+  --studio-accent-2: var(--seed-accent-2);
+  --studio-on-accent: #06121c;
+  --studio-on-primary: #06121c;
+
+  --studio-cover-1: #2f363e;
+  --studio-cover-2: #12161a;
+
+  --studio-danger: var(--clay);
+  --studio-on-danger: #0b0e12;
+  --studio-modal-bg: rgba(38, 42, 48, 0.9);
+  --studio-modal-border: rgba(255, 255, 255, 0.1);
+  --studio-scrim: rgba(8, 10, 13, 0.62);
+  --studio-shadow-lift: 0 12px 32px -12px rgba(0, 0, 0, 0.7);
+  --studio-shadow-modal: 0 32px 80px -24px rgba(0, 0, 0, 0.8);
+  --studio-inset-hairline: rgba(255, 255, 255, 0.05);
+
+  --studio-pending-fg: var(--celadon);
+  --studio-pending-bd: color-mix(in srgb, var(--celadon) 45%, transparent);
+  --studio-pending-bg: color-mix(in srgb, var(--celadon) 12%, transparent);
+  --studio-running-fg: var(--amber);
+  --studio-running-bd: color-mix(in srgb, var(--amber) 45%, transparent);
+  --studio-running-bg: color-mix(in srgb, var(--amber) 12%, transparent);
+  --studio-done-fg: oklch(0.82 0.14 165);
+  --studio-done-bd: oklch(0.76 0.16 165 / 0.45);
+  --studio-done-bg: oklch(0.76 0.16 165 / 0.12);
+  --studio-route-keyframe-fg: oklch(0.80 0.12 250);
+  --studio-route-reference-fg: oklch(0.80 0.13 305);
+  --studio-failed-fg: var(--clay);
+  --studio-failed-bd: color-mix(in srgb, var(--clay) 45%, transparent);
+  --studio-failed-bg: color-mix(in srgb, var(--clay) 12%, transparent);
+}
+
+/* 玻璃卡片 —— LumenX 的 .glass-panel + .atelier-card 合成一个。
+   它那边拆成两个是为了兼容多主题，我们只有一套，没必要。 */
+.anima-studio .studio-card {
+  background: color-mix(in oklab, var(--studio-bg-surface) 86%, transparent);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  border: 1px solid var(--studio-border-subtle);
+  border-radius: 20px;
+  box-shadow:
+    var(--studio-shadow-lift),
+    0 1px 0 0 var(--studio-inset-hairline) inset;
+}
+
+/* 小节标题：等宽 + 全大写 + 大字距。LumenX 全站在用这一个节奏。 */
+.anima-studio .studio-eyebrow {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--studio-text-2);
+}
+
+.anima-studio .studio-badge {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--studio-text-muted);
+  border: 1px solid var(--studio-border);
+  background: var(--studio-glass);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+}
+
+.anima-studio .studio-input {
+  background: var(--studio-bg-input);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  color: var(--studio-text);
+  transition: border-color 0.15s;
+}
+.anima-studio .studio-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--studio-primary) 50%, transparent);
+}
+.anima-studio .studio-input::placeholder {
+  color: var(--studio-text-muted);
+}
+
+/* 分段控件（模式选择器那种）—— LumenX 用它表达「同一维度里选一个」。 */
+.anima-studio .studio-seg {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--studio-bg-inset);
+  border: 1px solid var(--studio-border-subtle);
+  border-radius: 10px;
+}
+.anima-studio .studio-seg > button {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 7px;
+  color: var(--studio-text-2);
+  transition: background 0.15s, color 0.15s;
+}
+/* 选项多（引擎六个）时排成多行网格，每格等宽，文字不再被挤成三四行竖排。
+   列数由组件按个数算（`--seg-cols`），两行排满。 */
+.anima-studio .studio-seg.studio-seg--grid {
+  display: grid;
+  grid-template-columns: repeat(var(--seg-cols, 3), minmax(0, 1fr));
+}
+.anima-studio .studio-seg.studio-seg--grid > button {
+  min-height: 2.6rem;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+/* 构图模板的翻页条 —— 一条竖着的窄按钮，贴在卡片行的左/右端。
+   **文字必须正着**：`writing-mode: vertical-rl` 会把汉字连同箭头一起转倒，
+   第一版就是那样，箭头看着像个歪掉的 v。这里改成 flex 竖排 + 每字一行，
+   箭头单独一个字符、走正常书写方向，所以它指哪就是哪。 */
+.anima-studio .studio-pager {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  width: 30px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--studio-bg-inset);
+  color: var(--studio-text-muted);
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.anima-studio .studio-pager:hover {
+  background: var(--studio-bg-hover);
+  color: var(--studio-text);
+  border-color: var(--studio-border-subtle);
+}
+.anima-studio .studio-pager:active {
+  background: var(--studio-bg-elevated);
+}
+.anima-studio .studio-pager > .studio-pager-char {
+  font-size: 11.5px;
+  line-height: 1.15;
+}
+/* 箭头：**横向**的 —— 两页是左右关系，不是上下滚动。
+   悬停时往它指的方向挪一点，「这是翻页」比任何文案都直观。 */
+.anima-studio .studio-pager > .studio-pager-arrow {
+  font-size: 13px;
+  line-height: 1;
+  margin-top: 0.2rem;
+  transition: transform 0.15s;
+}
+.anima-studio .studio-pager[data-dir="next"]:hover > .studio-pager-arrow {
+  transform: translateX(3px);
+}
+.anima-studio .studio-pager[data-dir="prev"]:hover > .studio-pager-arrow {
+  transform: translateX(-3px);
+}
+
+.anima-studio .studio-seg > button:hover:not(:disabled) {
+  background: var(--studio-bg-hover);
+  color: var(--studio-text);
+}
+.anima-studio .studio-seg > button[data-active="true"] {
+  background: var(--studio-bg-elevated);
+  color: var(--studio-text);
+  box-shadow: 0 1px 0 0 var(--studio-inset-hairline) inset;
+}
+/* **不可用的模式要看得出为什么**，不是简单变灰就完事 ——
+   鼠标停上去有 title 说明哪个引擎才支持。 */
+.anima-studio .studio-seg > button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.anima-studio .studio-primary-btn {
+  background: var(--studio-primary);
+  color: var(--studio-on-primary);
+  border-radius: 10px;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.1s;
+}
+.anima-studio .studio-primary-btn:hover:not(:disabled) {
+  background: var(--studio-primary-hover);
+}
+.anima-studio .studio-primary-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.anima-studio .studio-primary-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.anima-studio .studio-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--studio-border) transparent;
+}
+.anima-studio .studio-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.anima-studio .studio-scroll::-webkit-scrollbar-thumb {
+  background: var(--studio-border);
+  border-radius: 3px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   质感层（2026-09-05 补）
+
+   原来这套只有配色 token，页面全是纯色块拼出来的 —— 和参考项目一比，
+   差的不是颜色而是**层次**：氛围光、玻璃、颗粒、衬线标题、悬停抬升。
+   这些都是纯 CSS，不增加任何运行时开销。
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* 氛围光。两团极淡的径向渐变压在最底层，让纯黑背景有纵深。
+   `fixed` 让它不跟着内容滚 —— 跟着滚会晕。 */
+.anima-studio {
+  position: relative;
+  isolation: isolate;
+}
+.anima-studio::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* 强度按主题分：深色下要压得住黑，浅色下稍微一点就够，
+     多了会像洗过的照片。 */
+  --studio-ambient: 7%;
+  background:
+    radial-gradient(
+      68rem 40rem at 12% -8%,
+      color-mix(in oklab, var(--studio-primary) var(--studio-ambient), transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      52rem 34rem at 96% 4%,
+      color-mix(in oklab, var(--studio-accent) calc(var(--studio-ambient) * 0.7), transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      60rem 44rem at 50% 108%,
+      color-mix(in oklab, var(--studio-primary) calc(var(--studio-ambient) * 0.6), transparent),
+      transparent 66%
+    );
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .anima-studio::before {
+    --studio-ambient: 11%;
+  }
+}
+:root[data-theme="dark"] .anima-studio::before {
+  --studio-ambient: 11%;
+}
+
+/* 胶片颗粒。铺在渐变封面上，让平的色块有触感。
+   数据 URI 的 SVG turbulence —— 不用任何图片资源。 */
+.anima-studio .studio-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 展示型标题用衬线。**只给标题**，正文和数据仍然用无衬线 ——
+   衬线在小字号上可读性差，而这一屏全是小字。 */
+.anima-studio .studio-display {
+  font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* 可点的卡片：悬停抬升 + 边框提亮。
+   `will-change` 不加 —— 一屏几十张卡片全部提升合成层会更卡。 */
+.anima-studio .studio-tile {
+  background: color-mix(in oklab, var(--studio-bg-surface) 86%, transparent);
+  border-radius: 16px;
+  position: relative;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+  /* **描边用外扩阴影，既不用 `border` 也不用 inset。**
+     · `border` 会让子元素裁到**内边距盒**的圆角，而背景画到**边框盒** ——
+       两条弧被那 1px 错开，角上露出一条卡片底色。
+     · `inset` 阴影画在**子元素下面**，封面会把上半圈盖住，
+       于是只在底部信息条周围露出三条边，看着像给那一条单独加了个框。
+     外扩阴影贴着边框盒外沿走，跟着圆角，谁也盖不住，也不占布局。 */
+  box-shadow: 0 0 0 1px var(--studio-border-subtle);
+}
+
+/* 卡片里的图片位自己切圆角。
+   **卡片本身不能 `overflow:hidden`** —— 那样会把里面的下拉菜单一起裁掉
+   （菜单只能在卡片内部弹，压在封面上）。 */
+.anima-studio .studio-tile-media {
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
+/* 整张卡片就是一块图（资产卡、风格卡）时，四个角都要切。 */
+.anima-studio .studio-tile-media[data-full="true"] {
+  border-radius: 16px;
+}
+/* 悬停：**中性提亮 + 抬起**，不描主色。
+   一圈饱和的蓝边看着很廉价，而且它把「鼠标在这儿」说成了
+   「这个被选中了」—— 颜色要留给真有含义的状态。 */
+.anima-studio .studio-tile:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px var(--studio-border),
+    var(--studio-shadow-lift);
+}
+/* 选中才用主色 —— 这一个是真的在表达状态。 */
+.anima-studio .studio-tile[data-active="true"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--studio-primary) 52%, transparent);
+}
+/* 菜单开着的时候**不许再动**。抬升动画会让元素在鼠标底下移开，
+   于是 hover 反复横跳 —— 表现就是卡片闪烁。 */
+.anima-studio .studio-tile[data-menu-open="true"],
+.anima-studio .studio-tile[data-menu-open="true"]:hover {
+  transform: none;
+  box-shadow:
+    0 0 0 1px var(--studio-border),
+    var(--studio-shadow-lift);
+}
+
+/* 磨砂弹窗。遮罩也糊一层 —— 只压暗的话，弹窗会像贴在截图上。 */
+.anima-studio .studio-scrim,
+.studio-scrim {
+  background: var(--studio-scrim, rgba(8, 7, 10, 0.62));
+  backdrop-filter: blur(10px) saturate(0.9);
+  -webkit-backdrop-filter: blur(10px) saturate(0.9);
+}
+.anima-studio .studio-modal,
+.studio-modal {
+  background: var(--studio-modal-bg, rgba(40, 37, 52, 0.88));
+  backdrop-filter: blur(28px) saturate(1.25);
+  -webkit-backdrop-filter: blur(28px) saturate(1.25);
+  border: 1px solid var(--studio-modal-border, rgba(255, 255, 255, 0.09));
+  border-radius: 20px;
+  color: var(--studio-text);
+  box-shadow:
+    var(--studio-shadow-modal, 0 32px 80px -24px rgba(0, 0, 0, 0.8)),
+    0 1px 0 0 var(--studio-inset-hairline, rgba(255, 255, 255, 0.07)) inset;
+}
+
+/* 下拉菜单。**和弹窗不是一个东西** —— 弹窗 20px 圆角是为了压住一整块内容，
+   菜单套上去就变成一颗药丸，看不出是菜单。菜单要方一点、紧一点、贴着触发点。 */
+.anima-studio .studio-menu,
+.studio-menu {
+  background: var(--studio-modal-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--studio-modal-border);
+  border-radius: 10px;
+  color: var(--studio-text);
+  padding: 4px;
+  box-shadow:
+    0 16px 40px -16px rgba(0, 0, 0, 0.55),
+    0 1px 0 0 var(--studio-inset-hairline) inset;
+}
+.anima-studio .studio-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--studio-text);
+  transition: background 0.12s;
+}
+.anima-studio .studio-menu-item:hover {
+  background: var(--studio-bg-hover);
+}
+.anima-studio .studio-menu-item[data-danger="true"] {
+  color: var(--studio-danger);
+}
+.anima-studio .studio-menu-item > svg {
+  flex: none;
+  opacity: 0.75;
+}
+.anima-studio .studio-menu-sep {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--studio-border-subtle);
+}
+
+/* 状态胶囊：一个小圆点 + 一个词。比纯文字更容易一眼扫到。 */
+.anima-studio .studio-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  /* 胶囊多半压在封面（始终偏暗）上，所以这一条两套主题都用深底白字。 */
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.86);
+}
+.anima-studio .studio-pill::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+/* 侧栏和页头的玻璃 —— 内容从下面滚过去时不会糊成一片。 */
+/* 侧栏和页头的玻璃。浅色下要用**比主区更深一阶**的底 ——
+   和主区同色的话，那一栏在视觉上就消失了（Anima 主界面的左栏
+   本来就是 surface-2）。深色下反过来，用更深的 base。 */
+/* AI 润色流光的三个色。**从 LumenX 抄的紫色系**，不跟主色走 ——
+   它标记的是「这段是 AI 出的」，在蓝色和绿色主题下都该是同一个信号。
+   放进 token 是因为组件里不许写死十六进制（有守卫盯着）。 */
+.anima-studio {
+  --studio-glow-1: #646cff;
+  --studio-glow-2: #a855f7;
+  --studio-glow-3: #ec4899;
+  /* 流光面板的底色。**偏紫、略透明，不是中性灰。**
+     内部那层光用的是 `mix-blend-mode: soft-light` —— 叠在近黑的中性底
+     （`--studio-bg-inset` 是 #0e1013）上几乎抬不起亮度，实测对照过：
+     换成这个底之后「边框像发光体照亮内容区」才出得来。 */
+  --studio-glow-surface: rgba(20, 17, 31, 0.92);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .anima-studio {
+    --studio-glow-surface: rgba(250, 249, 255, 0.94);
+  }
+}
+:root[data-theme="light"] .anima-studio {
+  --studio-glow-surface: rgba(250, 249, 255, 0.94);
+}
+
+/* 页头（banner）。**故意不刷底色。**
+ *
+ * 原来这四个页头用的是 `studio-chrome`（78% 不透明 + 模糊）。
+ * 而环境渐变是 `position: fixed; inset: 0` —— 它本来就铺满整窗，
+ * 只是被页头这层不透明底盖住了。结果就是渐变看起来「从 banner 下面
+ * 才开始」，页头和内容区之间凭空多出一道明显的色差。
+ *
+ * LumenX 的做法是渐变从顶部一路贯穿下来，banner 只靠排版和一条
+ * 细分隔线立住。这里照它来：底色交给窗口，页头只留分隔线。
+ *
+ * 内容不会滚到页头下面（页头是 `shrink-0`，滚动容器是它的兄弟），
+ * 所以那层模糊和不透明底本来也没在挡任何东西。
+ */
+.anima-studio .studio-banner {
+  background: transparent;
+}
+
+.anima-studio .studio-chrome {
+  background: color-mix(in oklab, var(--studio-chrome-bg) 78%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   macOS 红绿灯避让
+
+   窗口用的是 `TitleBarStyle::Overlay` + `hidden_title` —— 红绿灯**浮在内容上**，
+   占据左上角大约 (13..72, 14..34)。左侧栏第一个元素如果从 y=16 开始，
+   就会贴着它们，看起来像挤在一起。
+
+   只有**左侧那一列**需要避让；右边的页头从 x=212 开始，够不着。
+   ───────────────────────────────────────────────────────────────────────────── */
+.anima-studio {
+  --studio-titlebar-h: 38px;
+}
+
+.anima-studio .studio-titlebar-safe {
+  padding-top: var(--studio-titlebar-h);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   剧本排版
+
+   六种节点各有各的缩进和字重 —— 这是剧本格式的意义所在：
+   **不用读内容，扫一眼就知道哪是场景、哪是台词。**
+   ───────────────────────────────────────────────────────────────────────────── */
+.anima-studio .script-doc {
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, "PingFang SC", monospace;
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--studio-text);
+}
+.anima-studio .script-library { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; padding:24px; color:var(--studio-text); }
+.anima-studio .script-library-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--studio-border-subtle); }
+.anima-studio .script-library-header h1 { font-size:24px; margin:6px 0 0; }
+.anima-studio .script-library-header small { color:var(--studio-text-muted); font-size:10px; }
+.anima-studio .script-library-header .script-tools { border:0; }
+.anima-studio .script-library-list { flex:1; overflow:auto; }
+.anima-studio .script-library-list h2 { font-size:14px; font-weight:600; margin:24px 0 12px; }
+.anima-studio .script-library-list p, .anima-studio .script-library-status { font-size:12px; color:var(--studio-text-2); overflow-wrap:anywhere; }
+/* 行高砍一半：14px 上下留白 + 小字另起一行 ≈ 64px，一屏放不下几条。
+   改成 7px + 小字接在同一行右边，约 32px。 */
+.anima-studio .script-library-row { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; padding:7px 12px; border-bottom:1px solid var(--studio-border-subtle); font-size:13.5px; }
+.anima-studio .script-library-row:hover { background:var(--studio-bg-inset); }
+/* 小字不再另起一行 —— 它是次要信息，接在标题右边就够，省掉一整行高度 */
+.anima-studio .script-library-row small { display:inline; font-size:11px; color:var(--studio-text-muted); margin-left:10px; }
+.anima-studio .script-library-row > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* 排序下拉：section 头里的次要控件，不抢注意力 */
+.anima-studio .script-sort { flex:none; font-size:11px; padding:2px 4px; border-radius:5px; background:transparent; color:var(--studio-text-muted); border:1px solid transparent; }
+.anima-studio .script-sort:hover { border-color:var(--studio-border-subtle); color:var(--studio-text-2); }
+/* ── 剧本资源树 ───────────────────────────────────────────────────────────
+   左树右列表。树把三件事显式化：属于哪个项目、是原文还是剧本、
+   剧本从哪份原文来 —— 这三件事以前在一张平铺列表里全看不见。
+   ──────────────────────────────────────────────────────────────────────── */
+.anima-studio .script-explorer { display:flex; flex:1; min-height:0; gap:20px; }
+.anima-studio .script-tree { width:260px; shrink:0; overflow:auto; border-right:1px solid var(--studio-border-subtle); padding-right:12px; }
+.anima-studio .script-tree-tools { padding:10px 0; }
+.anima-studio .script-tree-tools button { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border-radius:6px; font-size:12px; background:var(--studio-bg-inset); }
+.anima-studio .script-tree-group { margin-bottom:6px; }
+.anima-studio .script-tree-project { display:flex; align-items:center; gap:4px; }
+.anima-studio .script-tree-project-name { display:flex; align-items:center; gap:6px; flex:1; min-width:0; padding:7px 4px; font-size:13px; text-align:left; border-radius:6px; }
+.anima-studio .script-tree-project-name:hover { background:var(--studio-bg-inset); }
+.anima-studio .script-tree-project-name span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.anima-studio .script-tree-project-name small { color:var(--studio-text-muted); font-size:11px; }
+/* 项目上的操作**默认不显示** —— 三个图标常驻会把 260px 的树挤满，
+   而它们是低频动作。悬停或键盘聚焦时才出现（聚焦那条不能省，否则键盘用户够不着）。 */
+.anima-studio .script-tree-project-actions { display:flex; gap:2px; opacity:0; transition:opacity .12s; }
+/* 选中的故事要看得出来 —— 左栏现在是「在哪个故事里」的唯一指示 */
+.anima-studio .script-tree-project.is-selected .script-tree-project-name { background:var(--studio-bg-inset); color:var(--studio-text); font-weight:500; }
+/* 项目名就地改 —— 新建之后自动聚焦，不弹窗 */
+.anima-studio .script-project-title { width:100%; background:transparent; border:0; padding:0; font-size:17px; font-weight:600; color:var(--studio-text); outline:none; border-radius:6px; }
+.anima-studio .script-project-title:focus { background:var(--studio-bg-inset); padding:2px 6px; margin:-2px -6px; }
+
+/* 原文 / 剧本两个子目录 —— 用户要的层级：项目 → 两个子目录 → 分集 */
+.anima-studio .script-section { margin-top:18px; }
+.anima-studio .script-section-head { display:flex; align-items:baseline; gap:10px; padding-bottom:6px; border-bottom:1px solid var(--studio-border-subtle); }
+.anima-studio .script-section-head h3 { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--studio-text); }
+.anima-studio .script-section-head small { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--studio-text-muted); font-size:11px; }
+.anima-studio .script-section-head button { font-size:11.5px; padding:3px 9px; border-radius:6px; background:var(--studio-bg-inset); color:var(--studio-text-2); }
+.anima-studio .script-section-head button:hover:not(:disabled) { color:var(--studio-text); }
+
+/* 勾选框 + 行主体：勾选是次要动作，行本身还是「打开它」 */
+.anima-studio .script-pick { flex:none; width:14px; height:14px; margin-right:2px; accent-color:var(--studio-primary); cursor:pointer; }
+.anima-studio .script-row-main { display:flex; align-items:center; justify-content:space-between; gap:10px; flex:1; min-width:0; text-align:left; }
+/* 删除键。**平时很淡，悬停才显形** —— 它是不可逆动作，
+   不该和「打开」抢注意力；但也不能藏到看不见（那就等于没有）。 */
+.anima-studio .script-row-del { flex:0 0 auto; opacity:.28; padding:3px 6px; border-radius:6px; color:var(--studio-text-muted); font-size:11px; line-height:1; transition:opacity .12s, color .12s, background .12s; }
+.anima-studio .script-library-row:hover .script-row-del { opacity:.75; }
+.anima-studio .script-row-del:hover { opacity:1; color:var(--studio-failed-fg); background:color-mix(in srgb, var(--studio-failed-fg) 12%, transparent); }
+/* 等第二次点击时**必须一眼看出来**，否则用户以为第一下没生效、
+   又点一下 —— 那就真删了。 */
+.anima-studio .script-row-del.is-armed { opacity:1; color:var(--studio-failed-fg); background:color-mix(in srgb, var(--studio-failed-fg) 16%, transparent); font-weight:600; }
+
+/* 集号单独一列，等宽对齐 —— 扫一眼就知道缺了哪一集。
+   行本身是 space-between，三个孩子会被摊开，所以标题那一列要 flex:1
+   自己占满，否则集号和标题之间会空出半屏。 */
+.anima-studio .script-library-row > span { flex:1; min-width:0; }
+.anima-studio .script-ep-code { flex:none; width:62px; margin-right:14px; font-family:ui-monospace,monospace; font-size:11.5px; letter-spacing:.02em; color:var(--studio-text-2); }
+.anima-studio .script-ep-code.is-inferred { color:var(--studio-text-muted); font-style:italic; }
+
+/* 左栏里「视频项目的分集」和剧本项目隔开 —— 它们不是同一类东西 */
+.anima-studio .script-tree-divider { margin:10px 4px; border-top:1px solid var(--studio-border-subtle); }
+.anima-studio .script-tree-project:hover .script-tree-project-actions,
+.anima-studio .script-tree-project-actions:focus-within { opacity:1; }
+.anima-studio .script-tree-project-actions button { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border-radius:5px; color:var(--studio-text-muted); }
+.anima-studio .script-tree-project-actions button:hover { background:var(--studio-bg-inset); color:var(--studio-text); }
+.anima-studio .script-tree-body { padding:2px 0 8px 14px; }
+.anima-studio .script-tree-body h4 { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--studio-text-muted); margin:8px 0 4px; }
+.anima-studio .script-tree-empty { font-size:11px; color:var(--studio-text-muted); padding:4px 0 6px; }
+.anima-studio .script-tree-doc { display:block; width:100%; text-align:left; padding:6px 8px; border-radius:6px; font-size:13px; }
+.anima-studio .script-tree-doc:hover { background:var(--studio-bg-inset); }
+.anima-studio .script-tree-doc.is-selected { background:var(--studio-bg-inset); box-shadow:inset 2px 0 0 var(--studio-accent, currentColor); }
+.anima-studio .script-tree-doc small { display:block; font-size:11px; color:var(--studio-text-muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* 「下一步」条：每一屏只给一个主动作，不让用户自己回去找。 */
+.anima-studio .script-next-step { gap:10px; }
+.anima-studio .script-next-step > span { font-size:12px; color:var(--studio-text-2); }
+.anima-studio .script-next-step input { flex:1; max-width:none !important; }
+.anima-studio .script-kind-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:4px 8px; border-radius:5px; background:var(--studio-bg-inset); color:var(--studio-text-2); }
+.anima-studio .script-hint { font-size:11px; color:var(--studio-text-muted); margin:-6px 0 10px; }
+
+.anima-studio .script-library-error { color:var(--studio-danger); font-size:12px; padding:10px 0; overflow-wrap:anywhere; }
+.anima-studio .script-workbench { display:flex; flex-direction:column; flex:1; min-height:0; min-width:0; border-top:1px solid var(--studio-border-subtle); color:var(--studio-text); }
+.anima-studio .script-tools { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:10px 0; border-bottom:1px solid var(--studio-border-subtle); }
+.anima-studio .script-tools button, .anima-studio .script-import button { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:32px; height:32px; padding:0 8px; border-radius:6px; font-size:12px; }
+.anima-studio .script-tools button:hover, .anima-studio .script-outline button:hover { background:var(--studio-bg-inset); }
+.anima-studio .script-tools button:disabled { opacity:.35; }
+.anima-studio .script-tools select, .anima-studio .script-tools input:not([hidden]), .anima-studio .script-import select { background:var(--studio-bg-inset); color:var(--studio-text); border:1px solid var(--studio-border-subtle); border-radius:6px; padding:6px 8px; font-size:12px; max-width:160px; }
+.anima-studio .script-tool-spacer { flex:1; }
+.anima-studio .script-layout { display:flex; flex:1; min-height:0; min-width:0; }
+.anima-studio .script-outline { flex:0 0 190px; overflow:auto; padding:16px 12px 16px 0; border-right:1px solid var(--studio-border-subtle); }
+.anima-studio .script-outline h3{ font-size:12px; font-weight:600; margin-bottom:12px; }
+.anima-studio .script-outline h3 span{ color:var(--studio-text-muted); margin-left:6px; }
+.anima-studio .script-outline button { width:100%; display:flex; flex-direction:column; text-align:left; gap:5px; padding:10px 8px; font-size:12px; border-radius:6px; overflow-wrap:anywhere; }
+.anima-studio .script-outline small, .anima-studio .script-person small { color:var(--studio-text-muted); font-size:11px; }
+.anima-studio .script-paper { flex:1; min-width:0; overflow:auto; padding:24px; background:var(--studio-bg-inset); }
+.anima-studio .script-paper .script-doc { max-width:760px; margin:auto; min-height:100%; overflow-wrap:anywhere; }
+.anima-studio .script-outline p { font-size:12px; line-height:1.7; color:var(--studio-text-2); }
+.anima-studio .script-person { display:flex; justify-content:space-between; gap:8px; padding:6px 0; }
+.anima-studio .script-notice { padding:6px 12px; font-size:12px; color:var(--studio-primary); }
+.anima-studio .script-import { padding:16px; border-bottom:1px solid var(--studio-border-subtle); font-size:12px; }
+.anima-studio .script-import strong { margin-right:16px; }
+.anima-studio .script-import pre { max-height:200px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; background:var(--studio-bg-inset); }
+.anima-studio .script-metadata { color:var(--studio-text-muted); font-size:11px; }
+.anima-studio .script-caption { color:var(--studio-primary); padding:10px 0; }
+@media(max-width:700px) {
+  .anima-studio .script-outline { flex-basis:120px; }
+  .anima-studio .script-paper { padding:14px; }
+  .anima-studio .script-paper .script-dialogue { padding:0 0 0 12px; }
+  .anima-studio .script-paper .script-characterCue, .anima-studio .script-paper .script-parenthetical { padding-left:24px; }
+}
+/* **`.script-doc` 自己也要写上。**
+   原来只有 `.script-doc :focus`（后代选择器）—— 而 contenteditable
+   就是 `.script-doc` 本身，所以浏览器默认的蓝色聚焦框一直在，
+   规则看着"有"，其实盖的是别的元素。 */
+.anima-studio .script-doc,
+.anima-studio .script-doc:focus,
+.anima-studio .script-doc:focus-visible,
+.anima-studio .script-doc :focus {
+  outline: none;
+  box-shadow: none;
+}
+.anima-studio .script-doc > * {
+  margin: 0;
+}
+.anima-studio .script-sceneHeading {
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.04em;
+  margin: 1.6em 0 0.7em !important;
+  color: var(--studio-primary);
+}
+.anima-studio .script-sceneHeading:first-child {
+  margin-top: 0 !important;
+}
+.anima-studio .script-action {
+  margin: 0.55em 0 !important;
+  color: var(--studio-text-2);
+}
+/* 角色名居中偏左、全大写感 —— 剧本惯例，也让它在一屏里最容易被扫到 */
+.anima-studio .script-characterCue {
+  margin: 1.1em 0 0 !important;
+  padding-left: 8.5em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.anima-studio .script-dialogue {
+  margin: 0.1em 0 0.55em !important;
+  padding: 0 6em 0 5em;
+}
+.anima-studio .script-parenthetical {
+  margin: 0.1em 0 !important;
+  padding-left: 7em;
+  font-style: italic;
+  color: var(--studio-text-muted);
+}
+.anima-studio .script-transition {
+  margin: 1.1em 0 !important;
+  text-align: right;
+  letter-spacing: 0.1em;
+  color: var(--studio-text-muted);
+}
+/* 空段落的占位提示 */
+.anima-studio .script-doc p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--studio-text-muted);
+}
+
+/* ── 压在图片上的那一层 ───────────────────────────────────────────────
+   卡片悬停时浮出的动作条。这些颜色**不进调色板** —— 它们盖的是图片，
+   不是页面，所以深浅主题下都一样，跟着主题变反而会在浅色下糊成一片。
+   写成类而不是 token，也就不用在两个主题块里各抄一遍。 */
+.anima-studio .studio-media-bar {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent);
+}
+.anima-studio .studio-media-btn {
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+.anima-studio .studio-media-btn:hover {
+  background: rgba(0, 0, 0, 0.68);
+}
+
+/* 通知条。阴影和描边写在这儿 —— 组件里不写颜色字面量。 */
+.anima-studio .studio-toast {
+  border: 1px solid transparent;
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    0 12px 32px -12px rgba(0, 0, 0, 0.45),
+    0 2px 8px -4px rgba(0, 0, 0, 0.25);
+  animation: studio-toast-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes studio-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* **通知栏是个堆叠区。** 每张卡外面一层槽，高度在 0fr ↔ 1fr 之间过渡：
+   新卡进来时从 0 长到自身高度，把上面的卡往上挤；
+   卡消失时（`data-out`）收拢到 0，上面的卡自然落下来。
+   不用量每张卡多高 —— grid 的 fr 自己会算。 */
+.anima-studio .studio-toast-slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease-out;
+}
+@starting-style {
+  .anima-studio .studio-toast-slot {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+.anima-studio .studio-toast-slot[data-out] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+/* 转圈。**`transform-origin` 必须写** —— SVG 里不写的话某些浏览器
+   绕左上角转，看起来是在画圈飞而不是自转。 */
+@keyframes studio-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.anima-studio [style*="studio-spin"] {
+  transform-origin: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   AI 润色面板的流光边框
+
+   移植自 LumenX 的 BorderGlow（它又源自 React Bits 的同名组件，MIT）。
+   那边靠 JS 逐帧写 `--cursor-angle` 跟随鼠标；我们只要「AI 正在干活」
+   和「刚干完」两种状态，所以改成纯 CSS 的角度动画 —— 不用每帧
+   进一次 React，也不会在滚动列表里给每张卡片挂一个 pointermove。
+
+   **`@property` 是必须的，不是可选的。** CSS 自定义属性默认是无类型的
+   字符串，浏览器不知道 `0deg → 360deg` 中间该怎么插值，动画会变成
+   「到点了直接跳」—— 边框不转，只是每隔一轮闪一下。声明了 `<angle>`
+   才会真的插值。Safari 16.4+ 支持，WKWebView 就是它。 */
+@property --studio-glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.studio-glow {
+  position: relative;
+  border-radius: 12px;
+  background: var(--studio-bg-elevated);
+  /* 描边和光晕都画在 ::before/::after 上，得让它们盖不住内容 */
+  isolation: isolate;
+}
+
+/* 描边本体：conic-gradient + 「减掉内芯」的 mask，
+   这是画渐变描边的标准做法 —— `border-image` 拐不了圆角。 */
+.studio-glow::before,
+.studio-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--studio-glow-angle),
+    transparent 0deg,
+    color-mix(in oklab, var(--studio-primary) 90%, transparent) 40deg,
+    color-mix(in oklab, var(--studio-accent) 90%, transparent) 95deg,
+    color-mix(in oklab, var(--studio-accent-2) 90%, transparent) 150deg,
+    transparent 210deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.45s ease-out;
+  pointer-events: none;
+}
+
+/* 外圈光晕：同一条渐变糊开，只负责「发光」这件事。
+   分成两层是因为描边要锐、光晕要散，一层做不到两样。 */
+.studio-glow::after {
+  inset: -6px;
+  padding: 7px;
+  filter: blur(9px);
+}
+
+.studio-glow.is-live::before,
+.studio-glow.is-live::after {
+  opacity: 1;
+  animation: studio-glow-spin 2.6s linear infinite;
+}
+.studio-glow.is-live::after {
+  opacity: 0.55;
+}
+
+/* 出结果那一下扫一圈就停 —— 是个「完成了」的仪式，不是持续动效。
+   一直转的话它会变成背景噪音，用户反而不知道什么时候好了。 */
+.studio-glow.is-done::before,
+.studio-glow.is-done::after {
+  animation: studio-glow-sweep 2.2s cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
+}
+
+@keyframes studio-glow-spin {
+  from {
+    --studio-glow-angle: 0deg;
+  }
+  to {
+    --studio-glow-angle: 360deg;
+  }
+}
+
+/* 扫一圈同时淡出：角度和透明度得在同一条 keyframes 里，
+   分成两条动画的话浏览器不保证它们同时结束，会看到光停住之后
+   才慢慢消失。 */
+@keyframes studio-glow-sweep {
+  0% {
+    --studio-glow-angle: 0deg;
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    --studio-glow-angle: 400deg;
+    opacity: 0;
+  }
+}
+
+/* 骨架屏的呼吸。等结果的时候要有东西在动 ——
+   静止的灰条和「卡住了」长得一模一样。 */
+@keyframes studio-skeleton {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* 关掉动画偏好下只留静态描边：光还在（说明「这块是 AI 出的」），
+   但不转。**不能整个隐藏** —— 那样这些人就看不出面板边界了。 */
+@media (prefers-reduced-motion: reduce) {
+  .studio-glow.is-live::before,
+  .studio-glow.is-live::after,
+  .studio-glow.is-done::before,
+  .studio-glow.is-done::after {
+    animation: none;
+    opacity: 1;
+  }
+  .studio-glow.is-live::after,
+  .studio-glow.is-done::after {
+    opacity: 0.5;
+  }
+}
+
+/* 右侧抽屉：滑进来、滑出去。
+   **位移要够大才看得出是"滑"** —— 16px 那点距离看着只是淡入淡出。 */
+@keyframes studio-queue-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes studio-queue-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes studio-scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes studio-scrim-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* 关掉动画偏好时直接出现/消失 —— 位移动画是这类偏好首先要躲的东西。 */
+@media (prefers-reduced-motion: reduce) {
+  .anima-studio [style*="studio-queue-"],
+  .anima-studio [style*="studio-scrim-"] {
+    animation: none !important;
+  }
+}
+
+/* 「正在跑」那颗点的呼吸。**静止的点和已完成的点长得一样** ——
+   而这两种状态用户最需要一眼分清。 */
+@keyframes studio-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}

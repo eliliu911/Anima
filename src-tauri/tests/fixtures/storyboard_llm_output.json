@@ -1,0 +1,98 @@
+```json
+[
+  {
+    "scale": "远景",
+    "camera_movement": "固定",
+    "prompt": "[场景:乡间公路]上，一辆破旧的大巴停在路边，周围是田野和乡村风光，阳光明媚。",
+    "action": "[角色:沈星晴]拖着行李箱从大巴车门走下，四下张望。",
+    "dialogue_lines": [],
+    "emotion_tags": ["轻松"],
+    "blocking": [
+      {"actor": "沈星晴", "zone": "中", "depth": "中景", "facing": "背对镜头", "posture": "站"}
+    ],
+    "ambient_sound": "大巴车引擎的轰鸣，轮胎碾过碎石",
+    "sound_effect": "行李箱轮子滚动声",
+    "score": "",
+    "duration": 5
+  },
+  {
+    "scale": "中景",
+    "camera_movement": "固定",
+    "prompt": "[角色:沈星晴]站在路边，穿着休闲装，手握行李箱，表情带着些许疑惑。",
+    "action": "[角色:沈星晴]转头看向田埂方向，准备开口说话。",
+    "dialogue_lines": [
+      {"speaker": "沈星晴", "line": "请问，去青石村怎么走？", "voice": "年轻女声，语速偏慢", "emotion": "犹豫", "off_screen": false}
+    ],
+    "emotion_tags": ["轻松"],
+    "blocking": [
+      {"actor": "沈星晴", "zone": "中", "depth": "中景", "facing": "面向镜头", "posture": "站"}
+    ],
+    "ambient_sound": "微风吹过田野",
+    "sound_effect": "",
+    "score": "",
+    "duration": 4
+  },
+  {
+    "scale": "中景",
+    "camera_movement": "固定",
+    "prompt": "[角色:老村民]站在田埂上，穿着朴素的衣服，手里拿着锄头，表情平静。",
+    "action": "[角色:老村民]慢慢直起腰，抬头看向[角色:沈星晴]，打量她。",
+    "dialogue_lines": [],
+    "emotion_tags": ["平静"],
+    "blocking": [
+      {"actor": "老村民", "zone": "中", "depth": "中景", "facing": "面向镜头", "posture": "站"}
+    ],
+    "ambient_sound": "微风吹过田野",
+    "sound_effect": "",
+    "score": "",
+    "duration": 4
+  },
+  {
+    "scale": "特写",
+    "camera_movement": "固定",
+    "prompt": "[角色:老村民]的面部特写，表情平静，眼神带着些许审视。",
+    "action": "[角色:老村民]缓缓开口说话。",
+    "dialogue_lines": [
+      {"speaker": "老村民", "line": "顺着这条路，走到头就是。", "voice": "低沉男声，语速偏慢", "emotion": "平静", "off_screen": false}
+    ],
+    "emotion_tags": ["平静"],
+    "blocking": [],
+    "ambient_sound": "微风吹过田野",
+    "sound_effect": "",
+    "score": "",
+    "duration": 4
+  },
+  {
+    "scale": "中景",
+    "camera_movement": "固定",
+    "prompt": "[角色:沈星晴]站在路边，手握行李箱，微微点头，表情带着感激。",
+    "action": "[角色:沈星晴]轻声道谢，拖着行李箱转身往前走。",
+    "dialogue_lines": [
+      {"speaker": "沈星晴", "line": "谢谢。", "voice": "年轻女声，语速偏慢", "emotion": "轻松", "off_screen": false}
+    ],
+    "emotion_tags": ["轻松"],
+    "blocking": [
+      {"actor": "沈星晴", "zone": "中", "depth": "中景", "facing": "背对镜头", "posture": "站"}
+    ],
+    "ambient_sound": "微风吹过田野",
+    "sound_effect": "行李箱轮子滚动声",
+    "score": "",
+    "duration": 4
+  },
+  {
+    "scale": "远景",
+    "camera_movement": "跟拍",
+    "prompt": "[场景:乡间公路]上，[角色:沈星晴]拖着行李箱沿着泥土路向前走，周围是田野和远山，风吹动她的头发。",
+    "action": "[角色:沈星晴]逐渐远离镜头，头发被风吹乱，行李箱轮子滚动声逐渐减弱。",
+    "dialogue_lines": [],
+    "emotion_tags": ["轻松", "低沉"],
+    "blocking": [
+      {"actor": "沈星晴", "zone": "中", "depth": "后景", "facing": "背对镜头", "posture": "走"}
+    ],
+    "ambient_sound": "微风吹过田野",
+    "sound_effect": "行李箱轮子滚动声",
+    "score": "",
+    "duration": 5
+  }
+]
+```

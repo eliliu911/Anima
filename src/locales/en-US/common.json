@@ -1,0 +1,43 @@
+{
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saved": "Saved",
+  "saving": "Saving...",
+  "delete": "Delete",
+  "deleted": "Deleted",
+  "close": "Close",
+  "copy": "Copy",
+  "copied": "Copied",
+  "review": "Review",
+  "confirm": "Confirm",
+  "enable": "Enable",
+  "disable": "Disable",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "search": "Search",
+  "searchPlaceholder": "Search...",
+  "refresh": "Refresh",
+  "loading": "Loading...",
+  "error": "Error",
+  "warning": "Warning",
+  "info": "Info",
+  "success": "Success",
+  "reset": "Reset",
+  "undo": "Undo",
+  "apply": "Apply",
+  "back": "Back",
+  "next": "Next",
+  "retry": "Retry",
+  "language": "Language",
+  "languages": {
+    "system": "System Default",
+    "en": "English (US)",
+    "zh": "简体中文"
+  },
+  "errorBoundary": {
+    "defaultTitle": "An unexpected error occurred in this component",
+    "unknownError": "Unknown render error",
+    "recoverButton": "Recover & Reload"
+  }
+}

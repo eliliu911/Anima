@@ -1,0 +1,53 @@
+Anima
+Copyright (c) 2026 SONG LIU
+
+本项目采用双许可（非商业：PolyForm Noncommercial 1.0.0；商业：另行授权），见 LICENSE。
+下面列出的例外部分按各自的许可。
+
+
+## 按 ELv2 授权的部分（改写自 DramaClaw）
+
+项目里有一部分代码**改写自 DramaClaw（ClaymoreLab），而 DramaClaw 本身是
+Elastic License 2.0**。ELv2 的限制随衍生作品一起传递，所以这部分代码
+不适用本项目的双许可，仍按 ELv2 授权（全文见 LICENSES/ELv2.txt）。
+
+涉及的文件（都在各自文件头注明了出处和搬了哪些函数）：
+
+  src/canvas/group.ts
+  src/canvas/nodes/GroupNode.tsx
+  src/canvas/nodes/PanoViewerNode.tsx
+  src/canvas/nodes/DirectorWorldNode.tsx
+  src/canvas/pano/panoMath.ts
+  src/canvas/director/DirectorWorldEditor.tsx
+  src/canvas/director/engine.ts
+  src/canvas/director/scene.ts
+  src/canvas/director/mannequins.ts
+  src/canvas/director/poses.ts
+  src/canvas/director/actorPalette.ts
+  src-tauri/src/actor_colors.rs
+
+约 4200 行。**不要移除这些文件头的出处声明** —— ELv2 明确禁止
+「移除或遮掩许可、版权或其他声明」，而且这也是我们自己定下的规矩。
+
+
+## 第三方代码
+
+  three.js（MIT）
+    src/canvas/director/world.ts 里的地面投影穹顶改写自
+    three 的 examples/jsm/objects/GroundedSkybox.js
+
+  skills/ 下的第三方技能：各自目录里有 LICENSE（MIT 或 Apache-2.0），按各自的许可。
+  标着 "Original for Anima" 的技能是本项目自己写的，适用本项目的双许可。
+
+其余依赖的许可证见 package.json / src-tauri/Cargo.toml 及各自的锁文件。
+
+
+## 模型权重不在本仓库
+
+Anima 本身不分发任何模型权重。运行时用到的模型由用户自行下载，
+**各自遵循各自的许可证** —— 其中有些是非商用的，例如：
+
+  F5-TTS        权重 CC-BY-NC-4.0（禁止商用），代码 MIT
+  Pony 系列     见各自发布页
+
+商用前请自己核对你实际装了哪些模型。

@@ -1,0 +1,37 @@
+{
+  "title": "ComfyUI 创作者工坊",
+  "subtitle": "本机 ComfyUI · 不绑定项目",
+  "online": "ComfyUI 在线",
+  "offline": "ComfyUI 离线",
+  "gpu": "GPU: {{name}}",
+  "vram": "显存: {{vram}} 可用",
+  "tabs": {
+    "companion": "4D 写真与数字人伴侣工坊",
+    "drama": "AI 影视短剧制作工厂"
+  },
+  "phases": {
+    "portrait": "阶段一：肖像与立绘工坊 (T2I)",
+    "video": "阶段二：4D 动态动作视频工坊 (I2V 三段循环)"
+  },
+  "presetTitle": "1. 选择基础风格预设",
+  "charId": "角色英文 ID",
+  "charName": "显示名称",
+  "promptTags": "点击快捷添加外观/场景提示词",
+  "posPrompt": "正向提示词 (Positive)",
+  "negPrompt": "负向提示词 (Negative Prompt · 自动内置杜绝畸形/手遮挡)",
+  "checkpoint": "生图模型 Checkpoint",
+  "seed": "随机种子 (Seed)",
+  "randomSeed": "随机生成",
+  "sendRender": "发送至 ComfyUI 渲染 4K 肖像",
+  "previewTitle": "2. 肖像成果预览与流转",
+  "waitingPortrait": "等待渲染肖像",
+  "waitingPortraitDesc": "在左侧配置提示词后点击生成，高清肖像将在此呈现，并可一键流转为 4D 动作视频。",
+  "navWorkspace": "工作区",
+  "navLibrary": "资产库",
+  "navScript": "剧本编辑器",
+  "navCanvas": "画布",
+  "navWorkbench": "创作台",
+  "navSettings": "设置",
+  "navOld": "作废",
+  "navTodo": "未做"
+}
