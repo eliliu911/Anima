@@ -1,68 +1,129 @@
 # Anima
 
-跨平台 AI 语音数字人助手，主要运行于 macOS。集成多大模型（OpenAI / Claude / 本地 LM Studio、Ollama、MLX）、低延迟实时语音对话、性格养成与本地记忆系统、MCP 工具调用，以及双模数字人面容（电子云虚拟面部 + 3D 模拟真人形态）。
+**本地优先的 AI 创作工作室 + 语音数字人，跑在 Apple Silicon 的 Mac 上。**
+从一份中文剧本出发，在本机完成「资产 → 分镜 → 带中文配音和口型的视频 → 剪辑成片」整条短剧生产线；
+同时也是一个可以实时语音对话、能被打断、有记忆和面容的 AI 助手。
 
-当前阶段：个人使用 / 原型验证。**阶段一（基础框架 + 多模型适配网关）已完成并可运行**，下一步是阶段二的语音与记忆系统。
+> A local-first AI studio and voice companion for Apple Silicon Macs. It turns a Chinese
+> screenplay into a finished, voiced and lip-synced short drama — assets, storyboard,
+> video and assembly — entirely on your own machine, and doubles as a real-time voice
+> assistant with memory and an animated face. Built with Tauri (Rust) + React.
+
+当前状态：**个人原型，持续开发中**（版本见 `package.json`）。不提供安装包，需要从源码构建。
+
+---
+
+## 能做什么
+
+### 短剧工作台（Studio）
+
+六步流水线，每一步都在界面上，也都能通过 MCP 交给 AI 代理来驱动：
+
+1. **剧本**：导入或改写剧本，按场标题自动分场。
+2. **风格**：整部剧统一画风（预设风格库 + 自定义）。
+3. **资产**：从剧本里抽出角色 / 场景 / 道具，出设定图；角色可以有多套造型。
+4. **分镜**：后台模型生成镜头表（景别、机位、运镜、站位、台词、时间段），逐镜检查时间线、口型、遮挡等问题。
+5. **出片**：每镜合成 MiniMax H3 官方格式的提示词，按镜选择「首帧出片」或「参考出片」；
+   台词直接由 H3 生成同步的中文语音和口型。超过 15 秒的镜头自动分段串成一条（窗口链）。
+6. **组装**：按镜头顺序拼成一集，可导出到剪映 / Final Cut Pro 继续剪。
+
+批量出片有队列（可拖动改顺序、插队），应用重启后会接着去 ComfyUI 收结果。
+
+### 无限画布
+
+节点式工作流（参考 LibTV 的交互）：出图、图生图、多视图设定卡、首帧 / 首尾帧 / 参考生视频、
+动作迁移、超分补帧、全景 / 3DGS 导演世界……节点之间连线就是数据流。
+
+- **超长视频**：H3 节点时长可拉到 75 秒，还是点「生成」，后台按提示词里的时间码分段（没写时间码就交给后台模型拆），一次串成一整条。
+- **风格 / LoRA**：风格广场里挑 LoRA 或提示词风格，按引擎自动核对 LoRA 架构（读 safetensors 的张量键名）。
+- 工作流可以存成模板、复用。
+
+### 语音助手
+
+- 多模型网关：OpenAI、Azure OpenAI、Claude（云端）+ LM Studio、Ollama、MLX server（本地），模型列表从后端实时拉取。
+- 实时语音：麦克风 → VAD 断句 → Whisper（Metal）→ 大模型流式输出 → 逐句 TTS → 播放，**全程可被开口打断**。
+- TTS 引擎可选：Edge TTS（免费、无需 key）以及若干本地引擎。
+- 记忆：SQLite + LanceDB，对话落库、后台提取事实、语义召回（嵌入模型需多语言，默认 `bge-m3`）。
+- 面容：电子云粒子形态 / 内置头 / 自己放进 `avatars/` 的 `.glb` / VRM；文字 → 拼音 → viseme 时间线驱动口型。
+- MCP：既是 MCP 客户端（接本地 / 远程工具），也自带 `anima-mcp` 服务端，把 Studio 的能力暴露给 Claude Code 等代理。
+
+---
+
+## 环境要求
+
+- **macOS + Apple Silicon**。开发机是 M4 Max / 128 GB 统一内存；视频生成很吃内存，小内存机器只能跑轻量部分。
+- Node.js、Rust 工具链（`rustup`）、`brew install protobuf`（LanceDB 需要）。
+- [Ollama](https://ollama.com)：`ollama pull bge-m3`（记忆层的嵌入模型）。
+- 可选：[LM Studio](https://lmstudio.ai) 跑本地大模型。
+- **出图 / 出片要 ComfyUI**，以及 WeeTodd 的 MLX 节点和对应的模型权重（MiniMax H3、LTX-2.5、Z-Image、Qwen-Image 等）。
+  **本仓库不分发任何模型权重**，需要自己下载，各模型遵循各自的许可（有些禁止商用）。
+  ComfyUI 在 Apple Silicon 上需要带 `--fp32-unet` 启动，否则视频会是纯黑（`scripts/anima.sh` 会处理）。
 
 ## 快速开始
 
 ```bash
 npm install
-./scripts/anima.sh doctor    # 先体检：工具链、密钥、模型、服务
-./scripts/anima.sh start     # 拉起依赖服务 + 应用
-./scripts/anima.sh stop      # 关掉应用（依赖服务保持运行）
+cp .env.example .env.local && chmod 600 .env.local   # 只在要用云端大模型时填 key
+./scripts/anima.sh doctor     # 体检：工具链、模型、服务、缺什么怎么装
+./scripts/anima.sh start      # 拉起依赖服务 + 应用
 ```
 
-`anima.sh` 会自动按需拉起 Ollama 与 LM Studio、注入 `.env.local` 的密钥、
-并把日志写到 `~/Library/Logs/Anima/anima.log`。完整用法 `./scripts/anima.sh -h`。
-也可以照旧直接用 `npm run tauri:dev`。
-
-需要 Node 与 Rust 工具链。Rust 装在 `~/.cargo/bin`，新 shell 里可能要先 `export PATH="$HOME/.cargo/bin:$PATH"`。
-
-构建还需要 `protoc`（LanceDB 依赖）与两个本地模型：
+也可以只起应用本体：
 
 ```bash
-brew install protobuf
-ollama pull bge-m3          # 嵌入模型，记忆层用（必须多语言，见 DECISIONS）
-# Whisper 语音识别模型放到 ~/Library/Application Support/com.anima.desktop/models/
+npm run tauri:dev
 ```
 
-已接入的后端：**LM Studio / Ollama / MLX server**（本地）+ **Azure OpenAI / OpenAI / Claude**（云端）。各后端的地址在设置面板里改，模型列表**从后端实时拉取**，不写死。
+一个 key 都不填也能跑：本地 LM Studio / Ollama 不需要 key，语音默认走 Edge TTS。
+**开发期不要把 key 存进 macOS Keychain**（每次编译都会反复弹授权框），原因见 `.env.example` 和 `src-tauri/src/config/secrets.rs`。
 
-API Key 开发期放在项目根目录的 `.env.local`（已 gitignore），格式：
+### 测试
+
+```bash
+npm test                                   # 前端（vitest）
+cd src-tauri && cargo test --lib           # Rust
+npm run build                              # 类型检查 + 前端构建
+```
+
+打真实服务的联调测试默认 `#[ignore]`，需要本机服务在跑。
+
+---
+
+## 目录
 
 ```
-ANIMA_API_KEY_AZURE='...'
-ANIMA_API_KEY_LMSTUDIO='...'
+src/              React 前端（Studio、画布、设置、语音界面）
+src-tauri/        Rust 后端（Tauri 命令、模型网关、语音管线、记忆、出图出片、任务队列、MCP）
+  src/bin/        anima-mcp 等独立工具
+skills/           给后台模型 / 代理用的技能（各自目录里有许可）
+shared/           前后端共用的提示词模板和词表
+comfyui-nodes/    给 ComfyUI 补的小节点
+workflows/        ComfyUI 工作流示例
+scripts/          启动器、体检、辅助脚本
+docs/ARCHITECTURE.md  架构设计
 ```
 
-变量名规则是 `ANIMA_API_KEY_` + 后端 id 大写。为什么开发期不用 Keychain（会反复弹授权框）见 [`docs/DECISIONS.md`](./docs/DECISIONS.md)。
-
-## 文档索引
-
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) —— 完整架构设计方案（技术选型、系统架构图、各功能模块设计、性能与并发注意事项、开发路线图）
-- [`docs/DECISIONS.md`](./docs/DECISIONS.md) —— 关键决策记录（项目命名、技术栈、模型路由策略等）
-- [`CLAUDE.md`](./CLAUDE.md) —— 给 Claude Code 的项目上下文（开发时优先阅读）
-
-## 技术栈速览
+## 技术栈
 
 | 层 | 技术 |
 | :--- | :--- |
-| 客户端外壳 | Tauri (Rust) |
-| 前端/3D | Vite + React + Three.js / React Three Fiber |
+| 客户端外壳 | Tauri 2 (Rust) |
+| 前端 / 3D | Vite + React + TypeScript + Three.js / React Three Fiber，状态管理 Zustand |
 | 本地存储 | SQLite + LanceDB |
-| 音频 | Rust cpal/rodio + Web Audio API |
-| 模型接入 | OpenAI、Claude（云端）+ LM Studio / Ollama / MLX server（本地，可插拔） |
+| 音频 | cpal / rodio + Web Audio API；Whisper（whisper.cpp + Metal） |
+| 出图出片 | ComfyUI + WeeTodd MLX 节点（MiniMax H3 / LTX-2.5 / Z-Image / Qwen-Image …） |
+| 模型接入 | OpenAI、Azure OpenAI、Claude + LM Studio / Ollama / MLX server |
 
-## 目标硬件
+---
 
-Mac Studio (M4 Max, 128GB 统一内存)，本机同时运行 LM Studio、Ollama、MLX server 三套本地推理服务。
+## 许可
 
-## 开发路线图（概览）
+**双许可**：
 
-1. ✅ 基础框架搭建：Tauri + Vite/React 工程配置、多模型适配网关
-2. ✅ 语音与记忆系统：音频采集播放、VAD、STT/TTS、可打断语音管线、SQLite + LanceDB 记忆层
-3. ⬜ 面容与动画开发：电子云粒子形态 → 3D Avatar + Viseme 嘴型同步
-4. ⬜ 功能集成与优化：MCP 工具链、性格配置面板、性能优化与打包
+- **非商业使用**免费：[PolyForm Noncommercial License 1.0.0](./LICENSES/PolyForm-Noncommercial-1.0.0.txt)（个人、学习、研究、非营利机构）。
+- **商业使用**需要另外取得授权：请在 [Issues](https://github.com/eliliu911/Anima/issues) 里联系。
 
-详见 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) 第 7 节。
+例外：改写自 DramaClaw（ClaymoreLab）的文件仍按 [Elastic License 2.0](./LICENSES/ELv2.txt)，清单见 [`NOTICE`](./NOTICE)；
+`skills/` 下的第三方技能按各自目录里的许可。完整说明见 [`LICENSE`](./LICENSE)。
+
+Copyright (c) 2026 SONG LIU
