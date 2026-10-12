@@ -1,129 +1,228 @@
+<p align="right"><b>English</b> | <a href="./README.zh-CN.md">简体中文</a></p>
+
 # Anima
 
-**本地优先的 AI 创作工作室 + 语音数字人，跑在 Apple Silicon 的 Mac 上。**
-从一份中文剧本出发，在本机完成「资产 → 分镜 → 带中文配音和口型的视频 → 剪辑成片」整条短剧生产线；
-同时也是一个可以实时语音对话、能被打断、有记忆和面容的 AI 助手。
+**A local-first AI short-drama studio and voice companion for Apple Silicon Macs.**
 
-> A local-first AI studio and voice companion for Apple Silicon Macs. It turns a Chinese
-> screenplay into a finished, voiced and lip-synced short drama — assets, storyboard,
-> video and assembly — entirely on your own machine, and doubles as a real-time voice
-> assistant with memory and an animated face. Built with Tauri (Rust) + React.
+Starting from a Chinese screenplay, Anima runs the whole short-drama pipeline on your own machine —
+script → assets → storyboard → video with synchronized Chinese speech and lip-sync → final cut.
+It is also a real-time voice assistant that can be interrupted, remembers, has an animated face, and calls tools.
 
-当前状态：**个人原型，持续开发中**（版本见 `package.json`）。不提供安装包，需要从源码构建。
+Status: **personal prototype, under active development** (version in `package.json`). No binary releases — build from source.
 
----
+- [Features](#features)
+  - [Short-drama studio](#1-short-drama-studio)
+  - [Infinite canvas](#2-infinite-canvas)
+  - [Voice assistant & digital human](#3-voice-assistant--digital-human)
+  - [AI agent & tools](#4-ai-agent--tools)
+  - [System & operations](#5-system--operations)
+- [Tech stack](#tech-stack)
+- [Requirements](#requirements)
+- [Getting started](#getting-started)
+- [Layout](#layout)
+- [License](#license)
 
-## 能做什么
-
-### 短剧工作台（Studio）
-
-六步流水线，每一步都在界面上，也都能通过 MCP 交给 AI 代理来驱动：
-
-1. **剧本**：导入或改写剧本，按场标题自动分场。
-2. **风格**：整部剧统一画风（预设风格库 + 自定义）。
-3. **资产**：从剧本里抽出角色 / 场景 / 道具，出设定图；角色可以有多套造型。
-4. **分镜**：后台模型生成镜头表（景别、机位、运镜、站位、台词、时间段），逐镜检查时间线、口型、遮挡等问题。
-5. **出片**：每镜合成 MiniMax H3 官方格式的提示词，按镜选择「首帧出片」或「参考出片」；
-   台词直接由 H3 生成同步的中文语音和口型。超过 15 秒的镜头自动分段串成一条（窗口链）。
-6. **组装**：按镜头顺序拼成一集，可导出到剪映 / Final Cut Pro 继续剪。
-
-批量出片有队列（可拖动改顺序、插队），应用重启后会接着去 ComfyUI 收结果。
-
-### 无限画布
-
-节点式工作流（参考 LibTV 的交互）：出图、图生图、多视图设定卡、首帧 / 首尾帧 / 参考生视频、
-动作迁移、超分补帧、全景 / 3DGS 导演世界……节点之间连线就是数据流。
-
-- **超长视频**：H3 节点时长可拉到 75 秒，还是点「生成」，后台按提示词里的时间码分段（没写时间码就交给后台模型拆），一次串成一整条。
-- **风格 / LoRA**：风格广场里挑 LoRA 或提示词风格，按引擎自动核对 LoRA 架构（读 safetensors 的张量键名）。
-- 工作流可以存成模板、复用。
-
-### 语音助手
-
-- 多模型网关：OpenAI、Azure OpenAI、Claude（云端）+ LM Studio、Ollama、MLX server（本地），模型列表从后端实时拉取。
-- 实时语音：麦克风 → VAD 断句 → Whisper（Metal）→ 大模型流式输出 → 逐句 TTS → 播放，**全程可被开口打断**。
-- TTS 引擎可选：Edge TTS（免费、无需 key）以及若干本地引擎。
-- 记忆：SQLite + LanceDB，对话落库、后台提取事实、语义召回（嵌入模型需多语言，默认 `bge-m3`）。
-- 面容：电子云粒子形态 / 内置头 / 自己放进 `avatars/` 的 `.glb` / VRM；文字 → 拼音 → viseme 时间线驱动口型。
-- MCP：既是 MCP 客户端（接本地 / 远程工具），也自带 `anima-mcp` 服务端，把 Studio 的能力暴露给 Claude Code 等代理。
+> The app UI, prompts and most code comments are in Chinese; the UI also ships an English locale.
 
 ---
 
-## 环境要求
+## Features
 
-- **macOS + Apple Silicon**。开发机是 M4 Max / 128 GB 统一内存；视频生成很吃内存，小内存机器只能跑轻量部分。
-- Node.js、Rust 工具链（`rustup`）、`brew install protobuf`（LanceDB 需要）。
-- [Ollama](https://ollama.com)：`ollama pull bge-m3`（记忆层的嵌入模型）。
-- 可选：[LM Studio](https://lmstudio.ai) 跑本地大模型。
-- **出图 / 出片要 ComfyUI**，以及 WeeTodd 的 MLX 节点和对应的模型权重（MiniMax H3、LTX-2.5、Z-Image、Qwen-Image 等）。
-  **本仓库不分发任何模型权重**，需要自己下载，各模型遵循各自的许可（有些禁止商用）。
-  ComfyUI 在 Apple Silicon 上需要带 `--fp32-unet` 启动，否则视频会是纯黑（`scripts/anima.sh` 会处理）。
+### 1. Short-drama studio
 
-## 快速开始
+Work is organized as **series → episodes → shots**, in a six-step pipeline: script → style → assets → storyboard → render → assemble.
+Every step works in the UI and can also be driven by an AI agent over MCP.
+
+**Script**
+- Rich-text screenplay editor (TipTap) and a script library for source texts and setting documents.
+- Adapt prose into a screenplay; generate an adaptation plan (which chapters become an episode and what each must pay off).
+- Automatic scene split from scene headings; line classification (dialogue / action / on-screen text / heading).
+- A screenwriting-craft library used on demand during adaptation.
+
+**Style**
+- One visual style for the whole series: built-in presets plus custom style text.
+- Style plaza: the same shot rendered in several styles side by side.
+- Style suggestions from reading the script.
+
+**Assets**
+- Extract characters / scenes / props from the script, review, then create; series-level asset pool.
+- Slot-based character specs (face / body / outfit kept separate), **multiple looks** per character with per-shot overrides; merge a character into another as one of its looks.
+- Sheet pipelines: turnaround, expressions, actions, multi-view character sheets, a seven-zone reference sheet; visual-DNA anchors; persona templates (no base image needed).
+- Image QC after generation; a text "spatial contract" that pins scene geography.
+- Auto-generated project and episode covers; a public asset library.
+
+**Storyboard**
+- A background model writes the shot table: size, angle, movement, purpose, blocking, lighting, dialogue (per-line emotion and voice), timed segments, cast.
+- One-take mode: a scene as one shot with in-shot cuts on a timeline.
+- Timeline detailing: every moment of a shot written from 0 s to the end.
+- Timeline lint: warns before rendering about wording the video model would draw wrong (occlusion, actions hidden behind a character, lines too long for their window, speech inside a hand-off zone).
+- A single shot-language vocabulary; programmatic ControlNet control images.
+- **Director world**: place cameras, mannequins, poses and blocking inside a panorama / 3D Gaussian-splat set, carried across shots.
+
+**Prompt synthesis & rendering**
+- Two prompt routes: a Chinese fill-in template (route A) and the official MiniMax H3 six-section format (route B; the official spec is compiled in).
+- Voice direction per line: emotion, timbre, stress and pauses — only where a line needs them.
+- Per-shot render route chosen automatically or by hand: **first-frame** (FL2VA) or **reference** (Ref2VA); optional continuity from the previous shot.
+- Engines: **MiniMax H3** (generates synchronized Chinese speech and lip-sync from the dialogue, including dialects) and **LTX-2.5** (about 10× faster).
+- Long takes (a whole scene in one generation) and long shots (over 15 s, split automatically and chained through H3 windows).
+- Quality tiers (LightX2V / Larry 4-step / 6-step / dense) × resolution (480P / 576P / 720P), with time estimates from measured runs.
+
+**Jobs & queue**
+- Batch rendering, batch first frames and asset image batches run as background jobs; the queue can be reordered by drag and drop, with hold slots; chained shots move as a group.
+- **Resume after restart**: the in-flight shot is collected from ComfyUI and the rest of the batch is requeued.
+- Progress follows ComfyUI's real sampling steps instead of fixed timeouts; the Mac is kept awake while rendering; local LLMs are unloaded to free memory before a render.
+
+**Assembly & export**
+- Episodes assembled in shot order; long takes occupy one slot.
+- Per-character TTS dubbing (an alternative to H3's native voice) and burned-in subtitles.
+- Export to **Final Cut Pro** (FCPXML 1.11) and **CapCut / JianYing** drafts.
+- A token-usage ledger per backend and model.
+
+### 2. Infinite canvas
+
+A node-based workflow editor (interaction modeled on LibTV) where edges are data flow.
+
+**Nodes**: prompt, image, video, audio / audio clip, character, LoRA, skill, shot / shot context,
+depth motion capture, upscale, panorama, panorama viewer, director world, group.
+
+**Capabilities**
+- Text-to-image, image-to-image, multi-view sheets, pose control; first-frame / first-last-frame / reference video, reference audio.
+- **Long video**: an H3 node can go up to 75 s and still just "Generate" — the backend splits by the timecodes in your prompt (or lets a background model split it if there are none) and chains it into one clip.
+- Long-take window table: one node, one table of windows, one MP4.
+- Motion transfer (depth / Canny control) and source-video remakes.
+- Background removal, upscaling (RealESRGAN), frame interpolation (RIFE), video upscaling.
+- 360° panorama to cube faces; single-image 3DGS set reconstruction (Apple SHARP).
+- Style plaza for LoRAs or prompt styles; LoRA architecture checked per engine from safetensors tensor keys, not file names.
+- Drag a connection to empty space for a "new node" menu; "+" handles on both sides.
+- Save workflows as templates, linted for silently broken wiring before saving; export results to Downloads.
+- Each node shows its own job's progress; jobs survive page reloads and app restarts.
+
+### 3. Voice assistant & digital human
+
+**Multi-model gateway**
+- Five adapters: OpenAI, Azure OpenAI, Claude, OpenAI-compatible (LM Studio / MLX), Ollama native `/api/chat`.
+- Model lists fetched live; real-time / background two-tier routing; automatic fallback for tool calls on backends that can't do them.
+- Streams normalized into text / reasoning / tool-call events; adjustable thinking effort; every stream cancellable.
+
+**Real-time voice**
+- Mic capture (cpal) → Silero VAD → Whisper (whisper.cpp + Metal) → streaming LLM → sentence-by-sentence TTS → playback (rodio).
+- **Barge-in**: speak at any time to interrupt (a cancellable state machine).
+- Proactive speech, timers, multiple conversation modes.
+- TTS engines: Edge TTS (free, no key), CosyVoice, IndexTTS, GPT-SoVITS, OpenAI-compatible servers (e.g. Kokoro, F5-TTS); emotion-matched reference voices and a voice library.
+
+**Memory & personality**
+- Dual-track memory: SQLite (sessions, metadata) + LanceDB (vectors) — conversations stored, facts extracted in the background, deduplicated, summarized, recalled into context.
+- Local knowledge base and a task-scoped ledger.
+- Personality growth: emotional axes (affinity / mood / energy) drive the system prompt and facial micro-expressions.
+- Skills (role-play): one skill switches identity, method and available tools together.
+
+**Digital human**
+- Particle-cloud face (shaders), a built-in head, your own `.glb` / VRM models, Live2D.
+- Text → pinyin → Oculus viseme timeline drives the mouth with any TTS engine; morph targets auto-detected across three naming schemes (Oculus / ARKit / five vowels).
+
+### 4. AI agent & tools
+
+- Agentic tool loop with tiered permissions, confirmation before execution, and Tauri capability allow-lists.
+- **MCP client** for local / remote tool servers, with a permission guard, resources and prompts.
+- **MCP server `anima-mcp`** exposing the studio (create projects, import scripts, create assets, shot tables, synthesis, rendering, stitching…) to agents such as Claude Code.
+- Image / video tools: Z-Image, Qwen-Image, Krea 2, SDXL (LoRA / ControlNet), MiniMax H3, LTX-2.5 — through ComfyUI + WeeTodd MLX nodes.
+- Research and web fetch, code outline, LSP, interactive terminal (PTY), git worktrees, sub-agents.
+- Scheduled tasks; music (internet radio + controlling the local Music.app).
+
+### 5. System & operations
+
+- `anima` launcher: one command starts / stops Ollama, LM Studio, ComfyUI and TTS services with keys injected; `anima doctor` health check.
+- Diagnostics that surface silent failures (e.g. ComfyUI started without `--fp32-unet`); a services page.
+- Self-update (pull and rebuild locally) and build garbage collection.
+- Multiple windows, single instance, Chinese / English UI (i18next), light / dark theme.
+- Keys in `.env.local` during development, macOS Keychain in signed builds.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+| :--- | :--- |
+| Shell | Tauri 2 (Rust), single-instance plugin |
+| Frontend | React 19 · TypeScript · Vite · Tailwind CSS · Zustand · i18next |
+| Canvas | React Flow (@xyflow/react) |
+| 3D / face | Three.js / React Three Fiber · Gaussian Splats 3D · Pixi.js + Live2D |
+| Editors | TipTap · react-markdown |
+| Async & network | Tokio · reqwest (rustls) · tokio-tungstenite · SSE / NDJSON decoding |
+| LLMs | OpenAI · Azure OpenAI · Anthropic Claude · LM Studio · Ollama · MLX server |
+| Voice | cpal / rodio · Silero VAD (ONNX Runtime) · whisper-rs (whisper.cpp + Metal) · Edge TTS · CosyVoice · IndexTTS · GPT-SoVITS |
+| Storage | SQLite (rusqlite, WAL) · LanceDB (Arrow) · macOS Keychain (keyring) |
+| Image & video | ComfyUI · WeeTodd MLX nodes · MiniMax H3 · LTX-2.5 · Z-Image · Qwen-Image · Krea 2 · SDXL |
+| Media | ffmpeg · RealESRGAN · RIFE · Apple SHARP (3DGS) |
+| Protocols | MCP (rmcp) · LSP (lsp-types) · portable-pty |
+| Tests | Vitest · cargo test (incl. protocol-level integration tests against mock HTTP servers) |
+
+## Requirements
+
+- **macOS on Apple Silicon.** Developed on an M4 Max with 128 GB unified memory; video generation is memory-hungry, so smaller machines can only run the lighter parts.
+- Node.js, the Rust toolchain (`rustup`), `brew install protobuf` (needed by LanceDB), ffmpeg.
+- [Ollama](https://ollama.com): `ollama pull bge-m3` (the memory embedding model — it must be multilingual).
+- Optional: [LM Studio](https://lmstudio.ai) for local LLMs.
+- **Image / video generation needs ComfyUI** with the WeeTodd MLX nodes and the model weights.
+  **This repository ships no model weights** — download them yourself; each model follows its own license (some are noncommercial only).
+  On Apple Silicon, ComfyUI must run with `--fp32-unet` or videos come out black (`scripts/anima.sh` handles it).
+
+## Getting started
 
 ```bash
 npm install
-cp .env.example .env.local && chmod 600 .env.local   # 只在要用云端大模型时填 key
-./scripts/anima.sh doctor     # 体检：工具链、模型、服务、缺什么怎么装
-./scripts/anima.sh start      # 拉起依赖服务 + 应用
+cp .env.example .env.local && chmod 600 .env.local   # only needed for cloud LLM keys
+./scripts/anima.sh doctor     # health check: toolchain, models, services, what's missing
+./scripts/anima.sh start      # start dependent services + the app
 ```
 
-也可以只起应用本体：
+App only:
 
 ```bash
 npm run tauri:dev
 ```
 
-一个 key 都不填也能跑：本地 LM Studio / Ollama 不需要 key，语音默认走 Edge TTS。
-**开发期不要把 key 存进 macOS Keychain**（每次编译都会反复弹授权框），原因见 `.env.example` 和 `src-tauri/src/config/secrets.rs`。
+It runs with no keys at all: local LM Studio / Ollama need none, and voice defaults to Edge TTS.
+**Don't store keys in the macOS Keychain during development** — every rebuild produces a new unsigned binary and the system keeps asking for permission (see `.env.example`).
 
-### 测试
+**Tests**
 
 ```bash
-npm test                                   # 前端（vitest）
+npm test                                   # frontend (Vitest)
 cd src-tauri && cargo test --lib           # Rust
-npm run build                              # 类型检查 + 前端构建
+npm run build                              # type check + frontend build
 ```
 
-打真实服务的联调测试默认 `#[ignore]`，需要本机服务在跑。
+Live tests against real services are `#[ignore]` by default and need the services running locally.
 
----
-
-## 目录
+## Layout
 
 ```
-src/              React 前端（Studio、画布、设置、语音界面）
-src-tauri/        Rust 后端（Tauri 命令、模型网关、语音管线、记忆、出图出片、任务队列、MCP）
-  src/bin/        anima-mcp 等独立工具
-skills/           给后台模型 / 代理用的技能（各自目录里有许可）
-shared/           前后端共用的提示词模板和词表
-comfyui-nodes/    给 ComfyUI 补的小节点
-workflows/        ComfyUI 工作流示例
-scripts/          启动器、体检、辅助脚本
-docs/ARCHITECTURE.md  架构设计
+src/                  React frontend (studio, canvas, settings, voice UI)
+src-tauri/            Rust backend
+  src/llm/            multi-model gateway
+  src/voice/ audio/ stt/ tts/   voice pipeline
+  src/memory/         SQLite + LanceDB memory
+  src/avatar/         lip-sync timeline
+  src/agent_runtime/  agent runtime and tools (image, video, ComfyUI, MCP bridge…)
+  src/mcp/ mcp_server/   MCP client / server
+  src/bin/            anima-mcp and other standalone tools
+skills/               skills for background models / agents (third-party skills carry their own licenses)
+shared/               prompt templates and vocabularies shared by frontend and backend
+comfyui-nodes/        small ComfyUI nodes
+workflows/            example ComfyUI workflows
+scripts/              launcher, health check, helper scripts
+docs/ARCHITECTURE.md  architecture
 ```
 
-## 技术栈
+## License
 
-| 层 | 技术 |
-| :--- | :--- |
-| 客户端外壳 | Tauri 2 (Rust) |
-| 前端 / 3D | Vite + React + TypeScript + Three.js / React Three Fiber，状态管理 Zustand |
-| 本地存储 | SQLite + LanceDB |
-| 音频 | cpal / rodio + Web Audio API；Whisper（whisper.cpp + Metal） |
-| 出图出片 | ComfyUI + WeeTodd MLX 节点（MiniMax H3 / LTX-2.5 / Z-Image / Qwen-Image …） |
-| 模型接入 | OpenAI、Azure OpenAI、Claude + LM Studio / Ollama / MLX server |
+**Dual-licensed:**
 
----
+- **Noncommercial use** is free under the [PolyForm Noncommercial License 1.0.0](./LICENSES/PolyForm-Noncommercial-1.0.0.txt) (personal use, study, research, noncommercial organizations).
+- **Commercial use** requires a separate license — please ask via [Issues](https://github.com/eliliu911/Anima/issues).
 
-## 许可
-
-**双许可**：
-
-- **非商业使用**免费：[PolyForm Noncommercial License 1.0.0](./LICENSES/PolyForm-Noncommercial-1.0.0.txt)（个人、学习、研究、非营利机构）。
-- **商业使用**需要另外取得授权：请在 [Issues](https://github.com/eliliu911/Anima/issues) 里联系。
-
-例外：改写自 DramaClaw（ClaymoreLab）的文件仍按 [Elastic License 2.0](./LICENSES/ELv2.txt)，清单见 [`NOTICE`](./NOTICE)；
-`skills/` 下的第三方技能按各自目录里的许可。完整说明见 [`LICENSE`](./LICENSE)。
+Exceptions: files adapted from DramaClaw (ClaymoreLab) remain under the [Elastic License 2.0](./LICENSES/ELv2.txt), listed in [`NOTICE`](./NOTICE);
+third-party skills under `skills/` keep the license in their own directory. Full terms in [`LICENSE`](./LICENSE).
 
 Copyright (c) 2026 SONG LIU
