@@ -10,6 +10,7 @@ It is also a real-time voice assistant that can be interrupted, remembers, has a
 
 Status: **personal prototype, under active development** (version in `package.json`). No binary releases — build from source.
 
+- [Screenshots](#screenshots)
 - [Features](#features)
   - [Short-drama studio](#1-short-drama-studio)
   - [Infinite canvas](#2-infinite-canvas)
@@ -23,6 +24,29 @@ Status: **personal prototype, under active development** (version in `package.js
 - [License](#license)
 
 > The app UI, prompts and most code comments are in Chinese; the UI also ships an English locale.
+
+---
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/series-overview.webp" alt="Series overview"><br><sub>Series overview: progress of scripts / cast / storyboard / renders, episode status, aspect ratio</sub></td>
+<td width="50%"><img src="docs/screenshots/style-presets.webp" alt="Styles"><br><sub>Styles: one visual look per series, each with what it suits and what it doesn't</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/asset-library.webp" alt="Asset library"><br><sub>Asset library: characters, scenes (360° panoramas), props</sub></td>
+<td><img src="docs/screenshots/canvas.png" alt="Infinite canvas"><br><sub>Infinite canvas: edges are data flow; each node explains its step</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/chat.png" alt="Chat"><br><sub>Chat: local / cloud model switch, thinking effort, voice input</sub></td>
+<td><img src="docs/screenshots/souls.webp" alt="Personas"><br><sub>Personas: particle cloud, Live2D, 3D VRM, realistic video — each with its own voice and face</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/live-talking.webp" alt="Live lip-sync"><br><sub>Digital human: real-time neural lip-sync (30 FPS)</sub></td>
+<td></td>
+</tr>
+</table>
 
 ---
 

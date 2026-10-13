@@ -9,6 +9,7 @@
 
 当前状态：**个人原型，持续开发中**（版本见 `package.json`）。不提供安装包，需要从源码构建。
 
+- [截图](#截图)
 - [功能](#功能)
   - [短剧工作台](#一短剧工作台studio)
   - [无限画布](#二无限画布)
@@ -20,6 +21,29 @@
 - [快速开始](#快速开始)
 - [目录](#目录)
 - [许可](#许可)
+
+---
+
+## 截图
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/series-overview.webp" alt="系列概览"><br><sub>系列概览：剧本 / 角色 / 分镜 / 成片进度，分集状态，画幅</sub></td>
+<td width="50%"><img src="docs/screenshots/style-presets.webp" alt="风格"><br><sub>风格：整部剧的视觉基调，每种风格写明适合与不适合的题材</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/asset-library.webp" alt="资产库"><br><sub>资产库：角色、场景（360° 全景）、道具</sub></td>
+<td><img src="docs/screenshots/canvas.png" alt="无限画布"><br><sub>无限画布：节点连线即数据流，节点上写明每一步做什么</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/chat.png" alt="对话"><br><sub>对话：本地 / 云端模型切换、思考强度、语音输入</sub></td>
+<td><img src="docs/screenshots/souls.webp" alt="角色形态"><br><sub>角色形态：电子云、Live2D、3D VRM、写实视频，各配声音与面容</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/live-talking.webp" alt="实时换嘴"><br><sub>数字人：实时神经换嘴（30 FPS）</sub></td>
+<td></td>
+</tr>
+</table>
 
 ---
 
