@@ -2340,7 +2340,7 @@ impl GenerateVideoTool {
                     weetodd::H3Mode::Text
                 };
                 (
-                    weetodd::build_h3_graph(&weetodd::H3Params {
+                    weetodd::build_h3_graph(&weetodd::H3Params { sampler: requested_h3_sampler(request),
                         continuity: None,
                         mode,
                         prompt,
@@ -2832,6 +2832,15 @@ pub(crate) async fn comfy_reachable() -> bool {
 /// 这里管旧首帧、导入的、出完首帧又改了清晰度 / 比例的 —— **原文件不动**，只改送进去的那份。
 /// 调用方点名的 H3 加速档（`h3_quality`：`lightx2v` / `standard` / `staged` / `dense`，和工作台出片设置同一套 id）。
 /// 没给或认不出回 `None`（照旧按尺寸自动）—— 认不出时记一条日志，不悄悄换成别的档
+/// 调用方点名的 H3 采样方法（`h3_sampling`：`euler` / `res_multistep`）。没给或认不出 = euler（认不出记一条日志）
+pub(crate) fn requested_h3_sampler(request: &ToolCallRequest) -> weetodd::H3Sampler {
+    let Some(raw) = request.arguments.get("h3_sampling").and_then(|v| v.as_str()) else { return Default::default() };
+    weetodd::H3Sampler::parse(raw).unwrap_or_else(|| {
+        tracing::warn!(raw, "h3_sampling 认不出，按 euler");
+        Default::default()
+    })
+}
+
 pub(crate) fn requested_h3_tier(request: &ToolCallRequest) -> Option<weetodd::H3Tier> {
     let raw = request.arguments.get("h3_quality")?.as_str()?.trim();
     match serde_json::from_value::<crate::cinema::RenderQuality>(json!(raw)) {
@@ -2967,7 +2976,7 @@ pub(crate) async fn render_shot_video(
 
     let dur = duration_secs.max(1.0);
     let graph = match route {
-        weetodd::Route::H3 => weetodd::build_h3_graph(&weetodd::H3Params {
+        weetodd::Route::H3 => weetodd::build_h3_graph(&weetodd::H3Params { sampler: Default::default(),
             continuity: None,
             mode: weetodd::H3Mode::Frames {
                 first: Some(&input_name),
@@ -3069,7 +3078,7 @@ pub(crate) async fn render_shot_video_reference_with(
     let plan = weetodd::H3SamplingPlan::current(true, tier.unwrap_or(weetodd::H3Tier::Standard));
     let budget = plan.reference_budget(weetodd::reference_pixel_budget(&sizes, width, height));
     tracing::info!(budget, refs = sizes.len(), width, height, "参考图像素预算");
-    let graph = weetodd::build_h3_graph(&weetodd::H3Params {
+    let graph = weetodd::build_h3_graph(&weetodd::H3Params { sampler: Default::default(),
         continuity,
         mode: weetodd::H3Mode::Reference {
             images: &names,
@@ -3160,7 +3169,7 @@ pub(crate) async fn render_long_take(
         .map(|((prompt, _), imgs)| weetodd::H3Window { prompt, images: imgs })
         .collect();
 
-    let graph = weetodd::build_h3_chain_graph(&weetodd::H3ChainParams {
+    let graph = weetodd::build_h3_chain_graph(&weetodd::H3ChainParams { sampler: Default::default(),
         windows: &ws,
         window_secs,
         context_frames,
@@ -3203,7 +3212,7 @@ pub(crate) async fn render_shot_video_text(
     if !weetodd::node_available(&client, weetodd::H3_PROBE_NODE).await {
         return Err("文生视频要 H3，本机没有它的 WeeTodd 节点。装上 WeeTodd-Nodes 再出片。".into());
     }
-    let graph = weetodd::build_h3_graph(&weetodd::H3Params {
+    let graph = weetodd::build_h3_graph(&weetodd::H3Params { sampler: Default::default(),
         continuity: None,
         mode: weetodd::H3Mode::Text,
         prompt,

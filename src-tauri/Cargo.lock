@@ -101,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "anima"
-version = "0.43.42"
+version = "0.43.61"
 dependencies = [
  "ab_glyph",
  "arrow-array",

@@ -389,6 +389,8 @@ export function VideoGenNodeComponent({ id, data, selected }: NodeProps<VideoGen
             onH3OfficialFormatChange={(on) => updateNodeData(id, { h3OfficialFormat: on })}
             h3Quality={data.h3Quality}
             onH3QualityChange={(q) => updateNodeData(id, { h3Quality: q })}
+            h3Sampling={data.h3Sampling}
+            onH3SamplingChange={(s) => updateNodeData(id, { h3Sampling: s })}
             isGenerating={data.isGenerating || !!data.referenceLoading}
             onGenerate={handleGenerate}
           />

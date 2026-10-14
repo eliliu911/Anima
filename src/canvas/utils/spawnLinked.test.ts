@@ -6,7 +6,10 @@ const labels = (c: { label: string }[]) => c.map((x) => x.label);
 describe("从节点长出连好线的新节点（2026-10-10：左侧「+」+ 拖线松手菜单）", () => {
   it("往后接：和以前右侧「+」那份一样", () => {
     expect(labels(spawnChoices("down", { type: "prompt" }))).toEqual(["文本", "图片", "视频"]);
-    expect(labels(spawnChoices("down", { type: "audioClip" }))).toEqual(["视频"]);
+    // 2026-10-13 照 LibTV：音频后面也能接音频（声音复制）
+    expect(labels(spawnChoices("down", { type: "audioClip" }))).toEqual(["视频", "音频"]);
+    expect(labels(spawnChoices("down", { type: "audio" }))).toEqual(["视频", "音频"]);
+    expect(spawnChoices("down", { type: "audio" })[1].type).toBe("audio");
     expect(labels(spawnChoices("down", { type: "videoGen", isVideo: true, hasVideo: true }))).toEqual(["文本", "图片", "视频", "深度动作捕捉", "超分 ×2", "补帧 ×2"]);
   });
   it("往前接：只给真能连进去的", () => {
@@ -15,6 +18,9 @@ describe("从节点长出连好线的新节点（2026-10-10：左侧「+」+ 拖
     expect(labels(spawnChoices("up", { type: "prompt" }))).toEqual(["文本"]);
     // 没有输入口的（音频素材）往前接不了
     expect(spawnChoices("up", { type: "audioClip" })).toEqual([]);
+    // 统一的音频节点往前接：文本（要念的词）、音频（声音复制的参考）
+    expect(labels(spawnChoices("up", { type: "audio" }))).toEqual(["文本", "音频"]);
+    expect(spawnChoices("up", { type: "videoGen" })[3].type).toBe("audio");
   });
   it("往后接：它的输出口 → 新节点的输入口；右侧「+」的 -plus 后缀去掉", () => {
     expect(linkFor("down", { id: "a", type: "imageGen", handle: "image-out-plus" }, { id: "b", type: "videoGen" }))

@@ -3631,7 +3631,7 @@ mod tests {
     }
 
     fn 空镜头(id: &str) -> crate::cinema::StoryboardShot {
-        crate::cinema::StoryboardShot {
+        crate::cinema::StoryboardShot { combat_style: String::new(),
             one_take: false,
             look_overrides: Default::default(),
             end_frame: String::new(),

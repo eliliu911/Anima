@@ -531,6 +531,9 @@ pub struct GenerateArgs {
     /// 画布视频节点的「加速」选项（用户 2026-10-08：「昨天的加速节点在画布里没有」）。不传 = 照旧按尺寸自动（Larry 4 步）
     #[serde(default)]
     pub h3_quality: Option<String>,
+    /// **H3 采样方法**（`euler` / `res_multistep`，2026-10-12 打斗测试）。不传 = euler
+    #[serde(default)]
+    pub h3_sampling: Option<String>,
     /// **参考音频**（本机路径，`r2v` + H3 才用，最多 3 段）。画布「音频素材」节点接进视频节点时带上（2026-10-08）
     #[serde(default)]
     pub audios: Vec<String>,
@@ -1651,6 +1654,16 @@ pub async fn generate_with(config_dir: &std::path::Path, args: GenerateArgs) -> 
 /// 同上，带上后台模型 —— **H3 超过 15 秒走超长视频**（[`crate::long_video`]），提示词没写时间时要它来拆段。
 /// 画布的后台任务和创作台走这一份。
 pub async fn generate_with_gateway(config_dir: &std::path::Path, gateway: Option<&crate::Gateway>, args: GenerateArgs) -> crate::error::Result<GenerateOutput> {
+    // 采样方法放进作用域：单条、超长视频的每一段建 H3 图时都取得到（不用一层层传参）
+    let extras = crate::agent_runtime::weetodd::H3Extras { sampler: sampler_of(&args.h3_sampling), ..Default::default() };
+    crate::agent_runtime::weetodd::with_extras(extras, generate_scoped(config_dir, gateway, args)).await
+}
+
+pub(crate) fn sampler_of(raw: &Option<String>) -> crate::agent_runtime::weetodd::H3Sampler {
+    raw.as_deref().and_then(crate::agent_runtime::weetodd::H3Sampler::parse).unwrap_or_default()
+}
+
+async fn generate_scoped(config_dir: &std::path::Path, gateway: Option<&crate::Gateway>, args: GenerateArgs) -> crate::error::Result<GenerateOutput> {
     use crate::agent_runtime::{ToolCallRequest, ToolHandler, ToolStatus};
 
     // `@` 引用：先对到资产上，再把标签换成「名字（描述）」。
@@ -2063,6 +2076,7 @@ mod tests {
         GenerateArgs {
             h3_official_format: None,
             h3_quality: None,
+            h3_sampling: None,
             audios: vec![],
             mode: mode.into(), engine: engine.into(),
             prompt: "老茶师注水".into(), negative_prompt: "模糊, 多手".into(),
@@ -2367,6 +2381,7 @@ mod tests {
         let args = GenerateArgs {
             h3_official_format: None,
             h3_quality: None,
+            h3_sampling: None,
             audios: vec![],
             mode: mode.clone(),
             engine: engine.clone(),

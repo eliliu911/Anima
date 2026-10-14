@@ -36,6 +36,7 @@ import { UpscaleNodeComponent } from "./nodes/UpscaleNode";
 import { GroupNodeComponent } from "./nodes/GroupNode";
 import { resumeCanvasJobs } from "./engine/resumeJobs";
 import { CanvasQuickActionBar } from "./ui/CanvasQuickActionBar";
+import { loadViewport, saveViewport } from "./utils/viewportMemory";
 import { CanvasWorkflowPanel } from "./ui/CanvasWorkflowPanel";
 import { CanvasAssetLibrary } from "./ui/CanvasAssetLibrary";
 import { CanvasZoomControl } from "./ui/CanvasZoomControl";
@@ -56,7 +57,7 @@ export interface CanvasViewProps {
 }
 
 function CanvasViewInner({ projectId: propProjectId, onProjectChange }: CanvasViewProps = {}) {
-  const { screenToFlowPosition, zoomTo, getZoom, fitView } = useReactFlow();
+  const { screenToFlowPosition, zoomTo, getZoom, fitView, setViewport } = useReactFlow();
   const tool = useCanvasToolStore((s) => s.tool);
   const setTool = useCanvasToolStore((s) => s.setTool);
   const trackpadPan = useCanvasToolStore((s) => s.trackpadPan);
@@ -286,6 +287,12 @@ function CanvasViewInner({ projectId: propProjectId, onProjectChange }: CanvasVi
     }
   }, [propProjectId, activeProjectId, loadCanvas]);
 
+  // 位置和缩放按工程各记一份：打开 / 切工程时恢复，挪完存（见 utils/viewportMemory.ts）
+  useEffect(() => {
+    const v = loadViewport(activeProjectId);
+    if (v) void setViewport(v);
+  }, [activeProjectId, setViewport]);
+
   // 页面重新加载或切回画布时，把还挂着后台任务的节点接回来（见 engine/resumeJobs.ts）
   useEffect(() => {
     resumeCanvasJobs(activeProjectId);
@@ -484,7 +491,8 @@ function CanvasViewInner({ projectId: propProjectId, onProjectChange }: CanvasVi
           className={[!showEdges ? "hide-canvas-edges" : "", tool === "hand" ? "canvas-tool-hand" : ""].join(" ")}
           connectionMode={ConnectionMode.Loose}
           connectionRadius={80}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          defaultViewport={loadViewport(activeProjectId) ?? { x: 0, y: 0, zoom: 1 }}
+          onMoveEnd={(_, vp) => saveViewport(useCanvasStore.getState().activeProjectId, vp)}
           minZoom={0.1}
           maxZoom={8}
           colorMode="dark"
@@ -539,7 +547,8 @@ function CanvasViewInner({ projectId: propProjectId, onProjectChange }: CanvasVi
           />
         )}
 
-        <CanvasWorkflowPanel open={showWorkflows} onClose={() => setShowWorkflows(false)} projects={workspaceProjects} />
+        <CanvasWorkflowPanel open={showWorkflows} onClose={() => setShowWorkflows(false)} projects={workspaceProjects}
+          onPlaced={(ids) => window.setTimeout(() => void fitView({ nodes: ids.map((id) => ({ id })), padding: 0.2, maxZoom: 1, duration: 300 }), 50)} />
 
       </div>
     </div>

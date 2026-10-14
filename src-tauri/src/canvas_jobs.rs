@@ -261,4 +261,92 @@ mod long_take_live {
         let path = out["path"].as_str().expect("结果里没有 path");
         assert!(std::path::Path::new(path).is_file(), "文件不在：{path}");
     }
+
+    /// 画布视频节点 → 它点「生成」时发出的那个 `generate` 任务（和 `dagExecutor` 单条出片同一组字段）。
+    /// 参考图按连线顺序给（= `<Picture N>` 的编号）。触发词不另拼：A/B 模板 `injectTriggers: false`、触发词手写在正文里
+    fn node_task(d: &serde_json::Value, images: &[String]) -> serde_json::Value {
+        let mut args = serde_json::json!({
+            "mode": d["mode"].as_str().unwrap_or("r2v"), "engine": d["engine"].as_str().unwrap_or("h3"),
+            "prompt": d["prompt"], "loras": d.get("loras").cloned().unwrap_or(serde_json::json!([])),
+            "negative_prompt": "", "width": d["width"], "height": d["height"],
+            "duration": d["durationSecs"].as_f64().unwrap_or(5.0), "generate_audio": d["generateAudio"].as_bool().unwrap_or(false),
+            "h3_official_format": d["h3OfficialFormat"].as_bool().unwrap_or(false), "images": images,
+        });
+        if let Some(q) = d["h3Quality"].as_str() { args["h3_quality"] = q.into(); }
+        if let Some(s) = d["h3Sampling"].as_str().filter(|s| !s.is_empty()) { args["h3_sampling"] = s.into(); }
+        if let Some(seed) = d["seed"].as_u64().filter(|s| *s > 0) { args["seed"] = seed.into(); }
+        serde_json::json!({"kind": "generate", "args": args})
+    }
+
+    #[test]
+    fn 画布节点转成生成任务() {
+        let d = serde_json::json!({"engine": "h3", "mode": "r2v", "durationSecs": 5, "generateAudio": true, "width": 896, "height": 512,
+            "seed": 20261012, "h3Quality": "staged", "h3Sampling": "res_multistep", "prompt": "p", "loras": [{"name": "h3-combat/a.safetensors", "strength": 0}]});
+        let t: CanvasTask = serde_json::from_value(node_task(&d, &["/1.png".into()])).expect("前端格式反序列化不了");
+        let v = serde_json::to_value(node_task(&d, &["/1.png".into()])).unwrap();
+        assert_eq!(v["args"]["seed"], 20261012);
+        assert_eq!(v["args"]["h3_sampling"], "res_multistep");
+        assert_eq!(v["args"]["loras"][0]["strength"], 0, "零对照的强度 0 要原样发");
+        let _ = t;
+    }
+
+    /// ComfyUI 正在跑 + 排着的任务数
+    async fn comfy_busy() -> Option<usize> {
+        let text = reqwest::get("http://127.0.0.1:8188/queue").await.ok()?.text().await.ok()?;
+        let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+        Some(v["queue_running"].as_array().map_or(0, Vec::len) + v["queue_pending"].as_array().map_or(0, Vec::len))
+    }
+
+    /// **按画布工作流里的节点逐个出片**（A/B 对照用，和在画布上一个个点「生成」发的是同一个任务）。
+    /// 先等 ComfyUI 连续空闲 `ANIMA_AB_IDLE_SECS`（默认 180）秒 —— 批量出片在跑时不插进去抢；之后一个出完再提交下一个。
+    /// 出的片拷成 `<ANIMA_AB_OUT>/<节点 id>.mp4`，每条一行记进 `results.jsonl`。一条失败接着下一条。
+    /// `ANIMA_AB_PROJECT=drama_… ANIMA_AB_WORKFLOW=… ANIMA_AB_NODES=ab0,abA ANIMA_AB_IMAGES=/1.png,/2.png,/3.png,/4.png ANIMA_AB_OUT=/dir
+    ///  cargo test --lib 画布工作流逐个出 -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore = "要本机 ComfyUI + H3，一个节点半小时上下"]
+    async fn 画布工作流逐个出() {
+        let cfg = dirs::config_dir().unwrap().join("com.anima.desktop");
+        let env = |k: &str| std::env::var(k).unwrap_or_else(|_| panic!("要 {k}"));
+        let wf: serde_json::Value = serde_json::from_str(&crate::canvas_workflows::load(&cfg, &env("ANIMA_AB_PROJECT"), &env("ANIMA_AB_WORKFLOW")).expect("工作流读不到")).unwrap();
+        let images: Vec<String> = env("ANIMA_AB_IMAGES").split(',').map(String::from).collect();
+        for p in &images {
+            assert!(std::path::Path::new(p).is_file(), "参考图不在：{p}");
+        }
+        let out_dir = std::path::PathBuf::from(env("ANIMA_AB_OUT"));
+        std::fs::create_dir_all(&out_dir).unwrap();
+        let idle_need: u64 = std::env::var("ANIMA_AB_IDLE_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(180);
+        let mut idle = 0u64;
+        while idle < idle_need {
+            match comfy_busy().await {
+                Some(0) => idle += 15,
+                Some(n) => { if idle > 0 || n > 0 { println!("ComfyUI 还有 {n} 个任务，等它空下来"); } idle = 0; }
+                None => panic!("连不上 ComfyUI（:8188）"),
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+        }
+        let nodes = wf["nodes"].as_array().unwrap();
+        for id in env("ANIMA_AB_NODES").split(',') {
+            let Some(node) = nodes.iter().find(|n| n["id"] == id) else { println!("[{id}] 工作流里没有这个节点，跳过"); continue };
+            let task: CanvasTask = serde_json::from_value(node_task(&node["data"], &images)).unwrap();
+            let t0 = std::time::Instant::now();
+            println!("[{id}] 开始（unix {}）", crate::jobs::now());
+            let (ok, detail) = match run(&cfg, None, task).await {
+                Ok(out) => match out["path"].as_str() {
+                    Some(path) => {
+                        let dest = out_dir.join(format!("{id}.mp4"));
+                        let copied = std::fs::copy(path, &dest).is_ok();
+                        (copied, serde_json::json!({"src": path, "dest": dest, "result": out}))
+                    }
+                    None => (false, serde_json::json!({"result": out})),
+                },
+                Err(e) => (false, serde_json::json!({"error": e.to_string()})),
+            };
+            let mins = t0.elapsed().as_secs_f64() / 60.0;
+            println!("[{id}] {} 用时 {mins:.1} 分钟", if ok { "完成" } else { "失败" });
+            let line = serde_json::json!({"node": id, "ok": ok, "minutes": mins, "detail": detail});
+            use std::io::Write;
+            let mut f = std::fs::OpenOptions::new().create(true).append(true).open(out_dir.join("results.jsonl")).unwrap();
+            let _ = writeln!(f, "{line}");
+        }
+    }
 }

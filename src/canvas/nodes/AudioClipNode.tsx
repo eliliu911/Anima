@@ -11,7 +11,7 @@ import type { AudioClipNode } from "../types";
 /**
  * 音频素材：放一段本机音频，从右边连到视频节点上当 H3 的参考音频 `<Audio N>`（2026-10-08）。
  *
- * 不生成东西 —— 和图片素材节点一样只是「放文件」。要念词去用「试音色」。
+ * 不生成东西 —— 和图片素材节点一样只是「放文件」。要念词去用「试音色」；连到试音色上就是声音复制的参考。
  */
 export function AudioClipNodeComponent({ id, data, selected }: NodeProps<AudioClipNode>) {
   const removeNode = useCanvasStore((s) => s.removeNode);
@@ -48,7 +48,8 @@ export function AudioClipNodeComponent({ id, data, selected }: NodeProps<AudioCl
           {err && <p role="alert" className="break-words text-red-400">{err}</p>}
           <p className="leading-relaxed text-white/35">
             从右边连到<b className="text-white/55">视频节点</b>：H3 参考生视频，提示词里是 <code>&lt;Audio 1&gt;</code>（或写 @音频1）。
-            还要再连至少一张图（人物 / 场景）。整段照用就在提示词里写 <code>fully_copy</code>，口型会跟着它
+            还要再连至少一张图（人物 / 场景）。整段照用就在提示词里写 <code>fully_copy</code>，口型会跟着它。
+            连到<b className="text-white/55">试音色</b>：声音复制 —— 用这段的嗓子念新的词
           </p>
         </div>
       </BaseNodeWrapper>

@@ -30,8 +30,12 @@ export function StudioShell() {
   const [page, setPage] = useState<StudioPage>("workspace");
   /** 非 null = 进到某个项目里，此时左侧换成六步导航 */
   const [projectId, setProjectId] = useState<string | null>(null);
-  /** 画布当前绑定的项目 ID */
-  const [canvasProjectId, setCanvasProjectId] = useState<string | null>(null);
+  /**
+   * 画布当前绑定的项目 ID。**`undefined` = 没指定，画布用它自己记住的那个。**
+   * 以前初值是 `null`，画布一打开就当成「切到自由创作」—— 把恢复好的工程换掉，连记住的「上次工程」一起删了
+   * （用户 2026-10-13：「没有记录当前选择的工程…每次关闭打开都要重新设置一遍」）
+   */
+  const [canvasProjectId, setCanvasProjectId] = useState<string | null | undefined>(undefined);
   /** 从剧本一览跳进来时，直接落在那一集的第 1 步 */
   const [entry, setEntry] = useState<{ episodeId?: string; step: StepId } | null>(null);
   /** 每次从 Chat 跳过来都换一个，让项目页按新的分集 / 步骤重新挂（同一个项目里也生效） */

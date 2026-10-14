@@ -226,6 +226,8 @@ export interface GenerateArgs {
   prompt: string;
   /** H3 加速档（`lightx2v` / `standard` / `staged` / `dense`，和工作台出片设置同一套 id）。不传 = 按尺寸自动 */
   h3_quality?: string;
+  /** H3 采样方法（`euler` / `res_multistep`）。不传 = euler */
+  h3_sampling?: string;
   /** 参考音频（本机路径）。只在 `r2v` + H3 时有用，最多 3 段，编号 `<Audio 1..>`（画布「音频素材」节点） */
   audios?: string[];
   negative_prompt: string;

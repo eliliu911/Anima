@@ -56,6 +56,95 @@ pub struct ShotSegment {
     /// 这一段的声音。
     #[serde(default)]
     pub sound: String,
+    /// **表演合同**：这一段里人物「说之前、说的时候、说完后」观众看得见什么（2026-10-12，见 [`Performance`]）。
+    /// 没有就不写出来 —— 老镜头的提示词指纹不变，不会全库误报过期。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub performance: Option<Performance>,
+    /// **攻防交换**：打斗镜里这一段的一次交换（七个字段，见 [`Exchange`]）。一段最多一个。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exchange: Option<Exchange>,
+}
+
+/// **表演合同**（2026-10-12，用户要出片「去 AI 感」；Codex 方案 P0 + P1）。
+///
+/// 表演以前散在 `visual` 和情绪词里，合成时写手要自己猜、经常整段丢掉。这里把它拆成可检查的几样：
+/// 触发 → 视线 → 面部（≤2）/ 呼吸身体（≤2）→ 手在干什么 → 物理细节（汗 / 水 / 泪 / 灰要有来源、运动、可见光）→ 结果 → 怎么拍才看得见。
+/// 规矩（`timeline_lint` 会查）：每段可见表演信号 2~4 个；远景不写面部；情绪必须落成看得见的行为。
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct Performance {
+    /// 谁在表演（人物名，和资产名一致）
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub performer: String,
+    /// 触发：听见、看见、受了什么力
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub trigger: String,
+    /// 视线：从哪到哪
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub gaze: String,
+    /// 面部信号，最多 2 个：慢眨、下眼睑收紧、眉心短收、嘴角停住……
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub face: Vec<String>,
+    /// 呼吸 / 身体，最多 2 个：吸气、吞咽、肩线起伏、重心后移……
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub body: Vec<String>,
+    /// 手实际在做什么（不是「紧张」）
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub hand: String,
+    /// 物理细节：汗 / 水 / 泪 / 血 / 灰 / 蒸汽 / 衣料。必须有来源、运动、看得见它的光
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub material: Option<MaterialEvent>,
+    /// 动作 / 台词之后留下的状态（进下一段的开场）
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub aftermath: String,
+    /// 什么景别、焦点、停留能证明它
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub camera_proof: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct MaterialEvent {
+    /// 来源：雨、蒸汽、尘土、伤口、汗……
+    #[serde(default)]
+    pub source: String,
+    /// 看得见的运动：水从发梢甩出、沿太阳穴滑下……
+    #[serde(default)]
+    pub motion: String,
+    /// 哪侧的光让它看得见
+    #[serde(default)]
+    pub light: String,
+}
+
+/// **一次攻防交换**（2026-10-12 打斗编排；字段顺序照 combat-choreography 的「开场空间 → 意图 → 攻击路径 → 防守 → 结果 → 新站位 → 镜头与声音」，
+/// 用我们自己的话写）。和 [`Performance`] 是同一套因果：上一个交换的 `new_state` 就是下一个的 `opening`。
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct Exchange {
+    /// 发起方（人物名）
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub attacker: String,
+    /// 开场：谁在画左 / 画右、距离、高度、架势、武器状态
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub opening: String,
+    /// 意图与触发：读到了什么、佯攻、护住什么、想抢什么
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub intent: String,
+    /// 攻击路径：哪只手 / 什么武器、从哪起、什么轨迹、打向哪里
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub attack: String,
+    /// 防守：格 / 挡 / 闪 / 卸 / 盾 / 舍
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub defense: String,
+    /// 结果：命中 / 擦过 / 落空 / 对撞 / 打断，力和环境的反应
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub result: String,
+    /// 新站位：脚下、距离、朝向、武器状态、伤、露出的破绽
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub new_state: String,
+    /// 证明这个动作的镜头 + 同步音效
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub camera_sound: String,
+    /// 接触那一刻（本镜内的秒）。FCPX 导出按它打冲击帧标记
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contact_at: Option<f32>,
 }
 
 /// 这一镜画面里要交代的场景和道具，带尺寸和摆放。

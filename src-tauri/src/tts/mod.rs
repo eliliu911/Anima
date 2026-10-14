@@ -8,6 +8,7 @@
 //! 按句切分能让「第一句合成」与「后续生成」并行，首字延迟只取决于第一句。
 //! 切句由 [`crate::audio::playback::SentenceSplitter`] 负责。
 
+pub mod clone_ref;
 pub mod cosyvoice;
 pub mod dict;
 pub mod edge;

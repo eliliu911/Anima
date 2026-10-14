@@ -405,7 +405,7 @@ where
             .and_then(|raw| parse(&raw).inspect_err(|e| tracing::warn!(shot = shot.shot_num, error = %e, raw = %raw, "时间线细化解析失败，模型原文附后")));
         match got {
             Ok(refined) => {
-                let segs: Vec<ShotSegment> = refined.iter().map(|r| r.seg.clone()).collect();
+                let segs: Vec<ShotSegment> = carry_contracts(&shot.segments, &refined);
                 let mut p = problems(shot, &segs, known_assets);
                 p.blocking.extend(conservation(&shot.segments, &refined, &names));
                 if p.blocking.is_empty() {
@@ -436,6 +436,27 @@ where
         feedback = format!("## 上次的问题，这次必须改掉\n{}", last.join("\n"));
     }
     best.ok_or_else(|| format!("第 {} 镜细化没通过检查（重试过 {RETRIES} 次）：{}", shot.shot_num, last.join("；")))
+}
+
+/// **原段的表演合同 / 攻防交换不能在细化里蒸发**（2026-10-12）。
+///
+/// 细化常把一段拆成几段。模型应该把合同带到对应的新段上（模板里写了），但它漏了就是静默丢失 ——
+/// 「提示词显示已合成，表演已经在中途蒸发」。所以：某个原段有合同、它拆出来的几段一个都没有时，补到第一段上。
+/// 模型自己写了（哪怕改写了）就以模型的为准。
+pub fn carry_contracts(original: &[ShotSegment], refined: &[Refined]) -> Vec<ShotSegment> {
+    let mut out: Vec<ShotSegment> = refined.iter().map(|r| r.seg.clone()).collect();
+    for (k, o) in original.iter().enumerate() {
+        let n = k + 1; // source_segments 是从 1 数的段号
+        let mine: Vec<usize> = refined.iter().enumerate().filter(|(_, r)| r.source_segments.contains(&n)).map(|(i, _)| i).collect();
+        let Some(&first) = mine.first() else { continue };
+        if o.performance.is_some() && mine.iter().all(|&i| out[i].performance.is_none()) {
+            out[first].performance = o.performance.clone();
+        }
+        if o.exchange.is_some() && mine.iter().all(|&i| out[i].exchange.is_none()) {
+            out[first].exchange = o.exchange.clone();
+        }
+    }
+    out
 }
 
 /// 写回：**只换 `segments`**，而且只在这一镜的时间段和开始细化时一样的情况下写（在写锁里核对）。
@@ -557,6 +578,28 @@ mod tests {
 
     fn seg(start: f32, end: f32, visual: &str) -> ShotSegment {
         ShotSegment { start, end, title: "t".into(), visual: visual.into(), ..Default::default() }
+    }
+
+    #[test]
+    fn 细化拆段时表演合同和攻防交换不丢() {
+        use crate::shot_table::{Exchange, Performance};
+        let mut a = seg(0.0, 4.0, "她听完，抬眼");
+        a.performance = Some(Performance { performer: "星澜".into(), gaze: "从他脸上移到零件".into(), ..Default::default() });
+        let mut b = seg(4.0, 8.0, "猎手劈下，她横枪");
+        b.exchange = Some(Exchange { attacker: "猎手".into(), defense: "步枪横架".into(), ..Default::default() });
+        let r = |s: ShotSegment, src: usize| Refined { seg: s, source_segments: vec![src] };
+        // 模型把两段各拆成两段，合同全丢了
+        let refined = vec![r(seg(0.0, 2.0, "听"), 1), r(seg(2.0, 4.0, "抬眼"), 1), r(seg(4.0, 6.0, "劈"), 2), r(seg(6.0, 8.0, "架"), 2)];
+        let out = carry_contracts(&[a.clone(), b.clone()], &refined);
+        assert_eq!(out[0].performance, a.performance, "补到原段拆出来的第一段");
+        assert!(out[1].performance.is_none());
+        assert_eq!(out[2].exchange, b.exchange);
+        // 模型自己写了（放在第二段）就不动
+        let mut own = seg(6.0, 8.0, "架");
+        own.exchange = Some(Exchange { attacker: "猎手".into(), defense: "改写过的".into(), ..Default::default() });
+        let refined = vec![r(seg(0.0, 4.0, "听"), 1), r(seg(4.0, 6.0, "劈"), 2), r(own.clone(), 2)];
+        let out = carry_contracts(&[a, b], &refined);
+        assert!(out[1].exchange.is_none() && out[2].exchange == own.exchange);
     }
 
     fn shot(segments: Vec<ShotSegment>) -> StoryboardShot {
@@ -894,4 +937,5 @@ mod live {
             Err(e) => println!("== 失败：{e}"),
         }
     }
+
 }

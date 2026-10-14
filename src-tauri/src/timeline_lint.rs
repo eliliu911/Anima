@@ -144,12 +144,117 @@ pub fn unsourced_people(source: &str, segments: &[ShotSegment], cast: &[&str], l
     out
 }
 
+// ---------------------------------------------------------------------------
+// 表演合同 / 打斗的检查（2026-10-12，Codex 方案「真人表演 QC」+ 打斗 QC）
+//
+// **只查填了合同 / 交换的段**：老镜头没有这两个字段，扫它们的画面文字会刷屏
+// （10-10 第一版时间线检查在真数据上误报 43 条，教训）。都是 advice，不挡出片。
+// ---------------------------------------------------------------------------
+
+const WIDE: &[&str] = &["远景", "全景", "大全景", "大远景", "wide", "extreme long"];
+const FROZEN: &[&str] = &["100%", "完全不变", "纹丝不动", "zero change", "frozen", "一动不动"];
+const WET: &[&str] = &["汗", "泪", "血", "水珠", "水滴", "雨水", "灰尘"];
+
+fn is_wide(scale: &str) -> bool {
+    let s = scale.to_lowercase();
+    WIDE.iter().any(|w| s.contains(w))
+}
+
+/// 表演合同的检查。回「第 N 段：……」
+pub fn performance_advice(shot: &crate::cinema::StoryboardShot) -> Vec<String> {
+    let mut out = Vec::new();
+    let wide = is_wide(&shot.scale);
+    for (i, seg) in shot.segments.iter().enumerate() {
+        let Some(p) = seg.performance.as_ref() else { continue };
+        let n = i + 1;
+        let signals = crate::combat::signal_count(p);
+        if signals > 4 {
+            out.push(format!("第 {n} 段：表演信号 {signals} 个，超过 4 个 —— 过度表演，H3 会每样都演一点、哪样都不像。留最能说明这一刻的 2~3 个"));
+        }
+        if signals == 0 && p.gaze.trim().is_empty() {
+            out.push(format!("第 {n} 段：表演合同只写了谁，没有任何看得见的行为（视线 / 面部 / 呼吸 / 手）—— 情绪要落成行为"));
+        }
+        if wide && !p.face.is_empty() {
+            out.push(format!("第 {n} 段：这一镜是{}，合同里写了面部（{}）—— 远处五官看不清，写了会崩脸。改成姿态、重心、轮廓", shot.scale, p.face.join("、")));
+        }
+        if let Some(m) = &p.material {
+            if m.source.trim().is_empty() || m.motion.trim().is_empty() {
+                out.push(format!("第 {n} 段：物理细节缺了来源或运动（来源「{}」/ 运动「{}」）—— 没有来源的汗和水会变成一层油亮皮肤", m.source.trim(), m.motion.trim()));
+            } else if m.light.trim().is_empty() {
+                out.push(format!("第 {n} 段：物理细节「{}」没写哪侧光让它看得见 —— 看不见的水滴等于没写", m.source.trim()));
+            }
+        } else if WET.iter().any(|w| p.body.iter().any(|b| b.contains(w)) || p.face.iter().any(|f| f.contains(w))) {
+            out.push(format!("第 {n} 段：合同里写了汗 / 泪 / 血 / 水，却没有物理细节（来源、运动、光）"));
+        }
+        if FROZEN.iter().any(|w| seg.constraints.contains(w)) && signals > 0 {
+            out.push(format!("第 {n} 段：约束里要「完全不变」，合同里又要微表演 —— 两样互相抵消，H3 多半选冻住。约束只锁身份和服装，别锁表情"));
+        }
+    }
+    // 说完就切：有台词、写了合同，却没有一段写「之后留下的状态」
+    let has_line = shot.dialogue_lines.iter().any(|l| !l.line.trim().is_empty());
+    let any_contract = shot.segments.iter().any(|s| s.performance.is_some());
+    if has_line && any_contract && !shot.segments.iter().any(|s| s.performance.as_ref().is_some_and(|p| !p.aftermath.trim().is_empty())) {
+        out.push("这一镜有台词，表演合同里没有一段写「说完之后」—— 台词一结束就切，人物像念完稿。至少留 0.3~1 秒反应".into());
+    }
+    out
+}
+
+/// 人物在画左还是画右（按「名字 … 画左 / 画面左侧 …」粗认，认不出回 None）
+fn side_of(text: &str, name: &str) -> Option<&'static str> {
+    if name.trim().is_empty() {
+        return None;
+    }
+    let at = text.find(name)?;
+    let tail: String = text[at + name.len()..].chars().take(12).collect();
+    if ["画左", "画面左", "左侧", "左边"].iter().any(|w| tail.contains(w)) {
+        Some("左")
+    } else if ["画右", "画面右", "右侧", "右边"].iter().any(|w| tail.contains(w)) {
+        Some("右")
+    } else {
+        None
+    }
+}
+
+/// 打斗的检查
+pub fn combat_advice(shot: &crate::cinema::StoryboardShot) -> Vec<String> {
+    let mut out = Vec::new();
+    let ex: Vec<(usize, &crate::shot_table::ShotSegment, &crate::shot_table::Exchange)> =
+        shot.segments.iter().enumerate().filter_map(|(i, s)| s.exchange.as_ref().map(|e| (i + 1, s, e))).collect();
+    if !shot.combat_style.is_empty() && ex.is_empty() {
+        out.push("这一镜标了打斗，却没有一段写攻防交换 —— 观众会觉得「动作连贯却不像在打」。至少写一个：谁从哪打向哪、怎么挡、结果".into());
+    }
+    if ex.len() > 2 && shot.duration <= 8.0 {
+        out.push(format!("{} 秒的镜写了 {} 个攻防交换 —— 太密，H3 会每招都做一半。8 秒以内最多 2 个，其余拆到下一镜", shot.duration, ex.len()));
+    }
+    for (k, (n, seg, e)) in ex.iter().enumerate() {
+        if e.result.trim().is_empty() {
+            out.push(format!("第 {n} 段：攻防交换没写结果（命中 / 擦过 / 落空 / 对撞）—— 没有接触的打斗等于两个人各自挥舞"));
+        }
+        if e.attack.trim().is_empty() || e.defense.trim().is_empty() {
+            out.push(format!("第 {n} 段：攻防交换缺了攻击路径或防守 —— 要写清谁从哪边、什么角度、打向哪里，另一人怎么避 / 挡"));
+        }
+        if seg.sound.trim().is_empty() && e.camera_sound.trim().is_empty() {
+            out.push(format!("第 {n} 段：有接触动作，声音一栏是空的 —— 冲击、衣料、呼吸、环境反应至少写一个"));
+        }
+        if let Some((m, _, next)) = ex.get(k + 1) {
+            if e.new_state.trim().is_empty() || next.opening.trim().is_empty() {
+                out.push(format!("第 {n} 段 → 第 {m} 段：上一个交换的「新站位」或下一个的「开场」没写 —— 接不上，下一招会从中立姿势重新开始"));
+            } else if let (Some(a), Some(b)) = (side_of(&e.new_state, &e.attacker), side_of(&next.opening, &e.attacker)) {
+                if a != b {
+                    out.push(format!("第 {n} 段 → 第 {m} 段：{} 上一招结束在画{a}，下一招开场却在画{b} —— 屏幕方向跳了，观众会以为换了人", e.attacker));
+                }
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn seg(visual: &str, blocking: &str, camera: &str) -> ShotSegment {
-        ShotSegment { start: 0.0, end: 1.0, title: String::new(), visual: visual.into(), forbid: String::new(), constraints: String::new(), blocking: blocking.into(), camera: camera.into(), sound: String::new() }
+        ShotSegment { performance: None, exchange: None, start: 0.0, end: 1.0, title: String::new(), visual: visual.into(), forbid: String::new(), constraints: String::new(), blocking: blocking.into(), camera: camera.into(), sound: String::new() }
     }
 
     const CAST: &[&str] = &["星澜", "陆川", "老秦"];
@@ -216,4 +321,51 @@ mod tests {
         let neg = vec![seg("门口没有人进来", "", ""), seg("倒影出现在屏幕上", "", "")];
         assert!(unsourced_people("星澜看着老秦。", &neg, CAST, &library).is_empty());
     }
+
+    fn shot_with(segs: Vec<ShotSegment>) -> crate::cinema::StoryboardShot {
+        let mut s: crate::cinema::StoryboardShot = serde_json::from_value(serde_json::json!({"id":"s","shot_num":1,"scale":"近景","camera_movement":"","dialogue":"","prompt":"","duration":8.0,"status":"pending"})).unwrap();
+        s.segments = segs;
+        s
+    }
+
+    #[test]
+    fn 表演检查_只查填了合同的段() {
+        use crate::shot_table::{MaterialEvent, Performance};
+        let plain = shot_with(vec![seg("她紧张地攥紧枪，满头大汗", "", "")]);
+        assert!(performance_advice(&plain).is_empty(), "老镜头没合同不查：{:?}", performance_advice(&plain));
+        let mut a = seg("", "", "");
+        a.performance = Some(Performance { face: vec!["慢眨".into(), "下眼睑收紧".into()], body: vec!["吸气".into(), "吞咽".into()], hand: "手指松开枪柄".into(), ..Default::default() });
+        let mut b = seg("", "", "");
+        b.performance = Some(Performance { performer: "星澜".into(), ..Default::default() });
+        let mut c = seg("", "", "");
+        c.performance = Some(Performance { gaze: "看他".into(), material: Some(MaterialEvent { source: "雨".into(), ..Default::default() }), ..Default::default() });
+        let msgs = performance_advice(&shot_with(vec![a, b, c]));
+        assert!(msgs.iter().any(|m| m.starts_with("第 1 段") && m.contains("5 个")), "{msgs:?}");
+        assert!(msgs.iter().any(|m| m.starts_with("第 2 段") && m.contains("没有任何看得见的行为")), "{msgs:?}");
+        assert!(msgs.iter().any(|m| m.starts_with("第 3 段") && m.contains("来源或运动")), "{msgs:?}");
+        // 远景写面部
+        let mut w = shot_with(vec![seg("", "", "")]);
+        w.scale = "全景".into();
+        w.segments[0].performance = Some(Performance { face: vec!["眉心短收".into()], ..Default::default() });
+        assert!(performance_advice(&w).iter().any(|m| m.contains("崩脸")));
+    }
+
+    #[test]
+    fn 打斗检查() {
+        use crate::shot_table::Exchange;
+        let mut s = shot_with(vec![seg("", "", "")]);
+        s.combat_style = "melee".into();
+        assert!(combat_advice(&s).iter().any(|m| m.contains("没有一段写攻防交换")));
+        let mut a = seg("", "", "");
+        a.sound = "金属撞击".into();
+        a.exchange = Some(Exchange { attacker: "猎手".into(), attack: "右臂刀斜劈".into(), defense: "横枪".into(), result: "刀砍在枪身上".into(), new_state: "猎手在画右，退半步".into(), ..Default::default() });
+        let mut b = seg("", "", "");
+        b.sound = "破风".into();
+        b.exchange = Some(Exchange { attacker: "猎手".into(), opening: "猎手在画左，压低重心".into(), attack: "左刃直刺".into(), defense: "晶片盾".into(), result: "刺在盾心".into(), ..Default::default() });
+        s.segments = vec![a, b];
+        let msgs = combat_advice(&s);
+        assert!(msgs.iter().any(|m| m.contains("屏幕方向跳了")), "{msgs:?}");
+        assert!(!msgs.iter().any(|m| m.contains("没写结果") || m.contains("声音一栏")), "{msgs:?}");
+    }
+
 }

@@ -1,7 +1,7 @@
 {
   "name": "anima",
   "private": true,
-  "version": "0.43.42",
+  "version": "0.43.61",
   "type": "module",
   "description": "AI 语音数字人助手 —— 桌面客户端",
   "scripts": {

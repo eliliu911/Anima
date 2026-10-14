@@ -84,7 +84,9 @@ describe("接线", () => {
     expect(node).not.toMatch(/src=\{`file:\/\//);
   });
 
-  it("音色下拉发的是 short_name", () => {
-    expect(node).toContain("value={v.short_name}");
+  it("音色下拉发的是 short_name（2026-10-13 起下拉在设置卡里）", () => {
+    const panel = readFileSync(new URL("../nodes/panels/AudioOperationPanel.tsx", import.meta.url), "utf8");
+    expect(panel).toContain("onChange({ voice: v.short_name })");
+    expect(panel).not.toContain("voice: v.name");
   });
 });

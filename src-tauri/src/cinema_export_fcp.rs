@@ -80,6 +80,9 @@ pub enum Item {
         /// TTS 配音。有它的时候片子自己的声音静音 —— 和「合成一集」一样是**替换**，不是叠加
         dub: Option<AudioMedia>,
         captions: Vec<Caption>,
+        /// 打斗冲击点（片段内秒数, 标记文字），后期在这里加黑白冲击帧 / 闪白 / 震屏 / 冲击音。
+        /// 从攻防交换算（`combat::contact_points`），没填交换的镜头是空的
+        cues: Vec<(f64, String)>,
     },
     /// 还没出片的镜头：按分镜秒数留空，带一个待办标记。
     /// 不留的话后面每一镜都往前错位，时间线和分镜对不上。
@@ -283,7 +286,7 @@ pub fn build(t: &Timeline) -> String {
             None
         };
         match item {
-            Item::Clip { name, dub, captions, .. } => {
+            Item::Clip { name, dub, captions, cues, .. } => {
                 let Some(Some((vid, dub_id))) = refs.get(i) else { continue };
                 let _ = writeln!(
                     spine,
@@ -329,6 +332,14 @@ pub fn build(t: &Timeline) -> String {
                     spine.push_str("        </caption>\n");
                 }
                 let _ = writeln!(spine, r#"        <marker start="0s" duration="1/{FPS}s" value="{}"/>"#, xml_escape(name));
+                // 冲击点记成待办标记（completed="0"）：FCP 时间线索引里按「未完成」能一条条筛出来做
+                for (at, text) in cues {
+                    let f = tl_frames(*at).min(dur.saturating_sub(1));
+                    if f == 0 {
+                        continue; // 和镜头名那个标记撞在同一帧，FCP 只显示一个
+                    }
+                    let _ = writeln!(spine, r#"        <marker start="{}" duration="1/{FPS}s" value="{}" completed="0"/>"#, tl_time(f), xml_escape(text));
+                }
                 spine.push_str("      </asset-clip>\n");
             }
             Item::Gap { name, .. } => {
@@ -605,7 +616,7 @@ pub async fn export_episode(
     if crate::episode_cover::has_cover_intro(&ep_dir) && intro.is_file() {
         let video = probe_video(&copy_media(&intro, &media_dir, "片头封面")?)?;
         cue_src.push((String::new(), video.tl_frames() as f64 / FPS as f64));
-        items.push(Item::Clip { name: "片头封面".into(), video, dub: None, captions: Vec::new() });
+        items.push(Item::Clip { name: "片头封面".into(), video, dub: None, captions: Vec::new(), cues: Vec::new() });
     }
 
     let route = crate::cinema::project_route(config_dir, project_id);
@@ -637,9 +648,10 @@ pub async fn export_episode(
                 let secs = video.tl_frames() as f64 / FPS as f64;
                 // 台词按各镜时长占比铺在这一条上（一镜一个窗口，窗口等长）
                 let dur: f64 = in_scene.iter().map(|s| s.duration.max(0.1) as f64).sum();
-                let (mut captions, mut at) = (Vec::new(), 0.0);
+                let (mut captions, mut cues, mut at) = (Vec::new(), Vec::new(), 0.0);
                 for s in &in_scene {
                     let share = secs * s.duration.max(0.1) as f64 / dur;
+                    cues.extend(shot_cues(s, share).into_iter().map(|(t, c)| (at + t, c)));
                     for c in crate::subtitle::cues_from_dialogue(&s.dialogue, share) {
                         captions.push(Caption { text: c.text, start: at + c.start, end: at + c.end });
                     }
@@ -649,7 +661,7 @@ pub async fn export_episode(
                 let scene = shot.scene_name.trim().trim_start_matches("场景：").trim();
                 let base = format!("第 {} 场 · 长镜头（第 {first}–{last} 镜）", shot.scene_no);
                 let name = if scene.is_empty() { base } else { format!("{base} · {scene}") };
-                items.push(Item::Clip { name, video, dub: None, captions });
+                items.push(Item::Clip { name, video, dub: None, captions, cues });
                 continue;
             }
         }
@@ -678,7 +690,8 @@ pub async fn export_episode(
         cue_src.push((shot.dialogue.clone(), secs));
         let scene = shot.scene_name.trim().trim_start_matches("场景：").trim();
         let name = if scene.is_empty() { label } else { format!("{label} · {scene}") };
-        items.push(Item::Clip { name, video, dub, captions });
+        let cues = shot_cues(shot, secs);
+        items.push(Item::Clip { name, video, dub, captions, cues });
     }
     progress(total, total, "写时间线");
     if items.iter().all(|i| matches!(i, Item::Gap { .. })) {
@@ -882,6 +895,16 @@ pub async fn cinema_choose_export_folder(default_dir: Option<String>) -> Result<
     .map_err(|e| Error::runtime(format!("选文件夹的框没打开：{e}")))?
 }
 
+/// 这一镜的打斗冲击点，按片子实际时长等比换算（分镜时长和出出来的片子常差零点几秒）
+fn shot_cues(shot: &crate::cinema::StoryboardShot, secs: f64) -> Vec<(f64, String)> {
+    cues_scaled(&shot.segments, shot.duration, secs)
+}
+
+fn cues_scaled(segments: &[crate::shot_table::ShotSegment], planned: f32, secs: f64) -> Vec<(f64, String)> {
+    let scale = if planned > 0.1 { secs / planned as f64 } else { 1.0 };
+    crate::combat::contact_points(segments).into_iter().map(|(t, c)| (t as f64 * scale, c)).collect()
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -942,6 +965,7 @@ mod tests {
                     video: video("/Volumes/外置 硬盘/回收师/媒体/第01镜_abcd.mp4", 8, true),
                     dub: None,
                     captions: vec![Caption { text: "你叫我什么？".into(), start: 1.0, end: 3.0 }],
+                    cues: vec![(0.0, "撞镜头名".into()), (4.5, "冲击点：刀背砸中护臂 & <测试>".into()), (99.0, "越界夹到最后一帧".into())],
                 },
                 Item::Gap { name: "第 2 镜 · 未出片".into(), secs: 5.0 },
                 Item::Clip {
@@ -949,6 +973,7 @@ mod tests {
                     video: VideoMedia { fps: (25, 1), frames: 250, ..video("/tmp/第03镜.mp4", 10, false) },
                     dub: Some(AudioMedia { path: "/tmp/第03镜_配音.wav".into(), secs: 12.0, info: AudioInfo { channels: 1, rate: 24000 } }),
                     captions: vec![Caption { text: "越界的不算".into(), start: 9.0, end: 30.0 }],
+                    cues: Vec::new(),
                 },
             ],
             bgm: Some(AudioMedia { path: "/tmp/配乐.mp3".into(), secs: 600.0, info: AudioInfo { channels: 2, rate: 44100 } }),
@@ -1009,6 +1034,26 @@ mod tests {
     }
 
     /// **对着本机 FCP 的 DTD 校验。** 没装 FCP 的机器跳过（打印一行说明，不算通过也不算失败）
+    /// 冲击点是片段里的待办标记：转义、夹到片段内；和镜头名撞在第 0 帧的丢掉（FCP 同帧只显示一个）
+    #[test]
+    fn 打斗冲击点写成待办标记() {
+        let x = build(&sample());
+        // 8 秒的片段：4.5s = 108 帧；99s 夹到最后一帧 191
+        assert!(x.contains(r#"<marker start="108/24s" duration="1/24s" value="冲击点：刀背砸中护臂 &amp; &lt;测试&gt;" completed="0"/>"#), "{x}");
+        assert!(x.contains(r#"<marker start="191/24s" duration="1/24s" value="越界夹到最后一帧" completed="0"/>"#), "{x}");
+        assert!(!x.contains("撞镜头名"));
+    }
+
+    #[test]
+    fn 换算到片子实际时长() {
+        use crate::shot_table::{Exchange, ShotSegment};
+        let mut seg: ShotSegment = serde_json::from_value(serde_json::json!({"start": 4.0, "end": 6.0})).unwrap();
+        seg.exchange = Some(Exchange { contact_at: Some(5.0), result: "刀背砸中护臂".into(), ..Default::default() });
+        let c = cues_scaled(&[seg], 10.0, 12.0);
+        assert_eq!(c.len(), 1);
+        assert!((c[0].0 - 6.0).abs() < 1e-6, "{c:?}");
+    }
+
     #[test]
     fn 通过_fcp_自带_dtd_的校验() {
         let Some(_) = fcp_dtd() else {

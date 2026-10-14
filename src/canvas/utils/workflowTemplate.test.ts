@@ -172,9 +172,11 @@ describe("接线", () => {
   });
 
   /** 载入要真的把图摆上画布，不是只弹个清单。 */
-  it("载入把节点和边都摆上去", () => {
-    expect(panel).toContain("setNodes(nodes)");
-    expect(panel).toContain("setEdges(t.edges)");
+  // 2026-10-13 用户：「点击载入，原本画布的内容会被清空，这不合理。我们是无限画布」—— 以前是 setNodes(nodes) 整张替换
+  it("载入把节点和边都摆上去，追加在现有内容旁边、不清空", () => {
+    expect(panel).toContain("appendGraph(store.nodes, store.edges, nodes, t.edges)");
+    expect(panel).not.toContain("setNodes(nodes)");
+    expect(panel).not.toContain("setEdges(t.edges)");
   });
 
   /**

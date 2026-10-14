@@ -29,10 +29,18 @@ export interface CanvasVideoSettingsPopoverProps {
   /** 实际用的加速档（`effectiveQuality` 算好的） */
   h3Quality?: CanvasH3Quality;
   onH3QualityChange?: (q: CanvasH3Quality) => void;
+  /** H3 采样方法（空 = euler）。不传回调就不显示 */
+  h3Sampling?: string;
+  onH3SamplingChange?: (s: string) => void;
   /** 长镜头开没开（一个节点出一整段）。不传就不显示这一项 */
   longTake?: boolean;
   onLongTakeChange?: (enable: boolean) => void;
 }
+
+export const H3_SAMPLINGS = [
+  { id: "euler", label: "Euler", hint: "默认" },
+  { id: "res_multistep", label: "RES 多步", hint: "打斗 LoRA 推荐" },
+] as const;
 
 export const RATIO_OPTIONS = [
   { id: "Auto", label: "Auto" },
@@ -141,6 +149,8 @@ export function CanvasVideoSettingsPopover({
   mode,
   h3Quality,
   onH3QualityChange,
+  h3Sampling,
+  onH3SamplingChange,
 }: CanvasVideoSettingsPopoverProps) {
   const choices = isH3(engine) && mode && onH3QualityChange ? qualityChoices(mode) : [];
   const [isOpen, setIsOpen] = useState(false);
@@ -411,6 +421,33 @@ export function CanvasVideoSettingsPopover({
                 })}
               </div>
               {h3Quality && <p className="mt-1.5 text-[10.5px] leading-snug text-zinc-500">{qualityInfo(h3Quality).lora}</p>}
+            </div>
+          )}
+
+          {/* 采样方法（H3）：默认 euler；Combat 类 LoRA 作者推荐 res_multistep（打斗 A/B 的 E 组） */}
+          {choices.length > 0 && onH3SamplingChange && (
+            <div>
+              <div className="text-[11px] font-medium text-zinc-400 mb-2">采样方法</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {H3_SAMPLINGS.map(({ id, label, hint }) => {
+                  const on = (h3Sampling || "euler") === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => onH3SamplingChange(id === "euler" ? "" : id)}
+                      className={`flex flex-col items-start rounded-xl px-2.5 py-1.5 text-left transition-all ${
+                        on
+                          ? "border border-white/90 bg-white/10 text-white"
+                          : "border border-white/5 bg-zinc-800/40 text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="text-[11.5px] font-medium">{label}</span>
+                      <span className="text-[10px] leading-snug text-zinc-500">{hint}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

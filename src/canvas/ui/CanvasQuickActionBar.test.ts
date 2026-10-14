@@ -9,7 +9,7 @@ describe("CanvasQuickActionBar 与 CanvasAddNodePanel 节点菜单", () => {
     const labels = ADD_NODE_ITEMS.map((item) => item.label);
     expect(labels).toEqual([
       "文本", "图片", "音频", "视频",
-      "深度动作捕捉", "超分 ×2", "试音色", "LoRA", "分镜", "镜头上下文", "全景出图", "全景查看", "导演世界",
+      "深度动作捕捉", "超分 ×2", "LoRA", "分镜", "镜头上下文", "全景出图", "全景查看", "导演世界",
       "上传资源",
     ]);
     // 用户 2026-10-08 定的分层：顶层四个、上传资源在最下面

@@ -10,6 +10,7 @@ import { studioCapabilities } from "../../api/studio";
 import "./CanvasImageAssetToolbar.css";
 import { PRESETS } from "../utils/workflowPresets";
 import { slugOf, templateNeeds, toTemplate, type WorkflowTemplate } from "../utils/workflowTemplate";
+import { appendGraph } from "../utils/appendGraph";
 
 /**
  * 工作流目录。
@@ -40,9 +41,11 @@ import { slugOf, templateNeeds, toTemplate, type WorkflowTemplate } from "../uti
  * 「还要填 2 张参考图」应该长在那个图片节点上，而不是一张关掉就没的清单里。
  * 然后面板就能像添加节点面板那样点完即关。
  */
-export function CanvasWorkflowPanel({ open, onClose, projects = [] }: {
+export function CanvasWorkflowPanel({ open, onClose, projects = [], onPlaced }: {
   open: boolean;
   onClose: () => void;
+  /** 载入 / 摆上之后，新加的那几个节点 id（画布把视角移过去 —— 追加在右边，不移过去用户会以为没载进来） */
+  onPlaced?: (ids: string[]) => void;
   /** 工作区里的工程，用来把「别的工程」那一栏显示成名字而不是 id */
   projects?: { id: string; title: string }[];
 }) {
@@ -94,8 +97,13 @@ export function CanvasWorkflowPanel({ open, onClose, projects = [] }: {
         const mine = missing.filter((i) => i.nodeId === n.id).map((i) => `载入后还要：${i.label}`);
         return (mine.length ? { ...n, data: { ...n.data, notes: mine } } : n) as CanvasNode;
       });
-      useCanvasStore.getState().setNodes(nodes);
-      useCanvasStore.getState().setEdges(t.edges);
+      // **追加，不清空**（用户 2026-10-13：「我们是无限画布，不是单工作流画布」）。
+      // 以前这里整张替换 —— 画布上原来的东西一点「载入」就没了
+      const store = useCanvasStore.getState();
+      const g = appendGraph(store.nodes, store.edges, nodes, t.edges);
+      store.setNodes(g.nodes);
+      store.setEdges(g.edges);
+      onPlaced?.(g.addedIds);
       setMsg(missing.length
         ? `已载入「${wf}」·${missing.length} 处要填，已经标在对应节点上`
         : `已载入「${wf}」·没有缺口，直接就能跑`);
@@ -149,11 +157,13 @@ export function CanvasWorkflowPanel({ open, onClose, projects = [] }: {
         {PRESETS.map((p) => (
           <button key={p.id} type="button" disabled={busy} title={p.hint}
             onClick={() => {
-              const g = p.build();
+              const built = p.build();
               const store = useCanvasStore.getState();
-              // **追加，不清空。** 画布上已经有的东西不该被一次点击抹掉。
-              store.setNodes([...store.nodes, ...g.nodes]);
-              store.setEdges([...store.edges, ...g.edges]);
+              // **追加，不清空。** 画布上已经有的东西不该被一次点击抹掉；摆在现有内容右边，不叠在上面
+              const g = appendGraph(store.nodes, store.edges, built.nodes, built.edges);
+              store.setNodes(g.nodes);
+              store.setEdges(g.edges);
+              onPlaced?.(g.addedIds);
               setMsg(`已摆上「${p.name}」`);
               onClose();   // 和添加节点面板一样，点完就关
             }}>

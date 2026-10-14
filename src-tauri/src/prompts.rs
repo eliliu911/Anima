@@ -206,8 +206,8 @@ impl PromptSlot {
         match self {
             PromptSlot::EntityExtraction => &["{TEXT}"],
             PromptSlot::SceneSplit => &["{TEXT}", "{FEEDBACK}"],
-            PromptSlot::ShotTable => &["{SCENE_NAME}", "{SCENE_TEXT}", "{PREV}", "{ASSETS}", "{METHOD}", "{MIN_SECS}", "{MAX_SECS}", "{SCENE_SECS}", "{SHOT_SIZES}", "{ANGLES}", "{MOVES}", "{PROJECT_RULES}", "{FEEDBACK}"],
-            PromptSlot::ShotTableOneTake => &["{SCENE_NAME}", "{SCENE_TEXT}", "{PREV}", "{ASSETS}", "{METHOD}", "{SHOT_COUNT}", "{SHOT_SECS}", "{TOTAL_SECS}", "{SHOT_SIZES}", "{ANGLES}", "{MOVES}", "{PROJECT_RULES}", "{FEEDBACK}"],
+            PromptSlot::ShotTable => &["{SCENE_NAME}", "{SCENE_TEXT}", "{PREV}", "{ASSETS}", "{METHOD}", "{MIN_SECS}", "{MAX_SECS}", "{SCENE_SECS}", "{SHOT_SIZES}", "{ANGLES}", "{MOVES}", "{PROJECT_RULES}", "{PERFORMANCE}", "{COMBAT}", "{FEEDBACK}"],
+            PromptSlot::ShotTableOneTake => &["{SCENE_NAME}", "{SCENE_TEXT}", "{PREV}", "{ASSETS}", "{METHOD}", "{SHOT_COUNT}", "{SHOT_SECS}", "{TOTAL_SECS}", "{SHOT_SIZES}", "{ANGLES}", "{MOVES}", "{PROJECT_RULES}", "{PERFORMANCE}", "{COMBAT}", "{FEEDBACK}"],
             PromptSlot::StoryboardPolish => &["{ASSETS}", "{DRAFT}", "{MAX_CHARS}"],
             PromptSlot::VideoPolish => &["{DRAFT}"],
             PromptSlot::T2vPolish => &["{DRAFT}"],
@@ -217,10 +217,10 @@ impl PromptSlot {
             PromptSlot::ScreenplayFromSource => &["{TEXT}", "{NOTE}", "{CRAFT}"],
             PromptSlot::SceneContractExtraction => &["{SCENE}", "{TEXT}"],
             PromptSlot::AdaptationPlan => &["{TEXT}", "{NOTE}"],
-            PromptSlot::RouteBWriter => &["{SECS}", "{SHOT}", "{TAGS}", "{SPEAKERS}", "{PREV}", "{METHOD}", "{H3_MODE}", "{H3_SPEC}", "{MIN_WORDS}", "{MAX_WORDS}", "{PROJECT_RULES}", "{FEEDBACK}"],
+            PromptSlot::RouteBWriter => &["{SECS}", "{SHOT}", "{TAGS}", "{SPEAKERS}", "{PREV}", "{METHOD}", "{H3_MODE}", "{H3_SPEC}", "{MIN_WORDS}", "{MAX_WORDS}", "{PROJECT_RULES}", "{PERFORMANCE}", "{COMBAT}", "{FEEDBACK}"],
             PromptSlot::CoverPoster => &["{PROJECT}"],
             PromptSlot::VoiceDirection => &["{ITEMS}"],
-            PromptSlot::TimelineDetail => &["{SECS}", "{SHOT}", "{SEGMENTS}", "{PREV}", "{METHOD}", "{TARGET}", "{PROJECT_RULES}", "{FEEDBACK}"],
+            PromptSlot::TimelineDetail => &["{SECS}", "{SHOT}", "{SEGMENTS}", "{PREV}", "{METHOD}", "{TARGET}", "{PROJECT_RULES}", "{PERFORMANCE}", "{COMBAT}", "{FEEDBACK}"],
             PromptSlot::LongVideoSplit => &["{PROMPT}", "{SECS}", "{N}", "{WINDOW_SECS}", "{OVERLAP}"],
         }
     }
@@ -255,7 +255,8 @@ impl PromptSlot {
     /// 10-03 才加，之前覆盖过这三个模板的人没有它 —— 同样不能因此报错。
     pub fn optional_placeholders(self) -> &'static [&'static str] {
         match self {
-            PromptSlot::ShotTable | PromptSlot::ShotTableOneTake | PromptSlot::TimelineDetail | PromptSlot::RouteBWriter => &["{METHOD}", "{PROJECT_RULES}"],
+            // `{PERFORMANCE}` / `{COMBAT}` 是表演合同和打斗的规则（[`crate::combat`]，10-12 加）：同样是之前改过模板的人没有，不能报错
+            PromptSlot::ShotTable | PromptSlot::ShotTableOneTake | PromptSlot::TimelineDetail | PromptSlot::RouteBWriter => &["{METHOD}", "{PROJECT_RULES}", "{PERFORMANCE}", "{COMBAT}"],
             _ => &[],
         }
     }
@@ -448,6 +449,16 @@ pub fn with_project_rules<'a>(cfg: &'a PromptConfig, slot: PromptSlot, vars: &[(
     if slot.placeholders().contains(&"{PROJECT_RULES}") && !v.iter().any(|(k, _)| *k == "PROJECT_RULES") {
         let line = if slot == PromptSlot::RouteBWriter { &cfg.project_rules_en } else { &cfg.project_rules };
         v.push(("PROJECT_RULES", line.as_str()));
+    }
+    // 表演合同 / 打斗的规则（[`crate::combat`]）：同一个道理，统一在这里补，调用方不用各传一遍
+    let en = slot == PromptSlot::RouteBWriter;
+    for (key, ph, zh, eng) in [
+        ("PERFORMANCE", "{PERFORMANCE}", crate::combat::PERFORMANCE_RULES_ZH, crate::combat::PERFORMANCE_RULES_EN),
+        ("COMBAT", "{COMBAT}", crate::combat::COMBAT_RULES_ZH, crate::combat::COMBAT_RULES_EN),
+    ] {
+        if slot.placeholders().contains(&ph) && !v.iter().any(|(k, _)| *k == key) {
+            v.push((key, if en { eng } else { zh }));
+        }
     }
     v
 }
@@ -676,6 +687,10 @@ const TIMELINE_DETAIL: &str = r##"你是分镜与摄影导演。下面这一镜�
 - **用户定下的**：写到什么程度：{TARGET}。这是为了把每一刻写清楚，不是凑字 —— 形容词堆砌不算。
 {PROJECT_RULES}
 
+{PERFORMANCE}
+
+{COMBAT}
+
 {FEEDBACK}
 
 只输出 JSON，形状如下：
@@ -759,6 +774,10 @@ const SHOT_TABLE: &str = r##"你是分镜与摄影导演。按下面「设计方
 - **用户定下的**：不为过场单开没有台词的短镜 —— 承接上一场、重新交代空间、人物落座就位，写进本镜的第一段，不单独占一镜；
   一句台词连同它的铺垫和反应能放进一镜的，就是一镜（方法里「每次切镜带来观看距离、视点、反应、省略或节奏变化」说的也是这件事）。
 {PROJECT_RULES}
+
+{PERFORMANCE}
+
+{COMBAT}
 
 {FEEDBACK}
 
@@ -867,6 +886,10 @@ const SHOT_TABLE_ONE_TAKE: &str = r##"你是分镜与摄影导演。按下面「
 - **用户定下的**：上一场的结尾是「这是本集第一场」时，本场第一镜就是整集开头 —— 第 0 秒画面里就有人物在做一件让人想看下去的事，
   不用空镜、全景慢推、天气开场；第一段写满 0~3 秒，title 以「钩子：」开头。
 {PROJECT_RULES}
+
+{PERFORMANCE}
+
+{COMBAT}
 
 {FEEDBACK}
 
@@ -1001,6 +1024,10 @@ The code builds the final prompt structure from your fields. Apply these officia
 6. frame: an English prompt for a single still image of the opening moment (shot size, angle, subjects, scene, light). No camera movement, no dialogue.
    **Say where everyone stands in that frame** — left / centre / right and foreground / background, relative to the fixed things of the place (the bench, the door, the window) — which way each person faces, where they look, and what each hand holds. The opening frame decides the staging of the whole shot: whoever is on the left here stays on the left.
 {PROJECT_RULES}
+
+{PERFORMANCE}
+
+{COMBAT}
 
 {FEEDBACK}
 
@@ -1776,6 +1803,10 @@ fn try_vars(slot: PromptSlot, sample: &str) -> Vec<(&'static str, String)> {
             _ => crate::ai_film::shot_table_method(),
         },
     ));
+    // 表演合同 / 打斗规则：和 `with_project_rules` 在正式调用里补的是同一份
+    let en = slot == PromptSlot::RouteBWriter;
+    v.push(("PERFORMANCE", if en { crate::combat::PERFORMANCE_RULES_EN } else { crate::combat::PERFORMANCE_RULES_ZH }.into()));
+    v.push(("COMBAT", if en { crate::combat::COMBAT_RULES_EN } else { crate::combat::COMBAT_RULES_ZH }.into()));
     // 超长视频分段：试跑按 30 秒 / 3 段，一段没写时间的提示词
     v.push(("PROMPT", "一个女孩在雨夜的天台上，镜头从她身后慢慢推近。她转身跑下楼梯，冲进霓虹街道，在人群里回头看了一眼，说：「别跟着我。」最后消失在巷子尽头。".into()));
     v.push(("N", "3".into()));

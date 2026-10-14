@@ -70,6 +70,10 @@ export async function canvasLongTake(args: {
   generateAudio?: boolean;
   /** 节点上选的 H3 加速档（和单条出片同一套 id）。不给后端用 Standard */
   h3Quality?: string;
+  /** 节点上选的 H3 采样方法。不给 = euler */
+  h3Sampling?: string;
+  /** 节点上写的 seed。不给后端随机 */
+  seed?: number;
   /** 节点选的 LoRA（已按引擎核过、激活词已拼进各窗口提示词，见 `canvasLoraConfig`） */
   loras?: { name: string; strength: number }[];
 }): Promise<{ video_path: string; windows: number; net_secs: number }> {
@@ -84,6 +88,8 @@ export async function canvasLongTake(args: {
         height: args.height,
         generate_audio: args.generateAudio !== false,
         ...(args.h3Quality ? { h3_quality: args.h3Quality } : {}),
+        ...(args.h3Sampling ? { h3_sampling: args.h3Sampling } : {}),
+        ...(args.seed ? { seed: args.seed } : {}),
         ...(args.loras?.length ? { loras: args.loras } : {}),
       },
     },

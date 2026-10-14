@@ -211,6 +211,9 @@ struct WireShot {
     ambient_sound: String,
     #[serde(default)]
     sound_effect: String,
+    /// 打斗镜的动作类型（unarmed / melee / gunfu / energy / xianxia），不是打斗镜不写
+    #[serde(default)]
+    combat_style: String,
     #[serde(default)]
     assets: WireAssets,
     #[serde(default)]
@@ -767,6 +770,7 @@ pub fn parse_shots(raw: &str, assets: &[AssetRef], first_num: u32, notes: &mut V
             dialogue_lines,
             ambient_sound: w.ambient_sound.trim().into(),
             sound_effect: w.sound_effect.trim().into(),
+            combat_style: crate::combat::normalize_style(&w.combat_style),
             status: "pending".into(),
             ..blank_shot()
         };

@@ -66,6 +66,8 @@ interface VideoOperationPanelProps {
   /** 节点存的加速档（空 = 按链路默认）。见 `utils/h3Quality` */
   h3Quality?: string;
   onH3QualityChange?: (q: CanvasH3Quality) => void;
+  h3Sampling?: string;
+  onH3SamplingChange?: (s: string) => void;
   isGenerating?: boolean;
   onGenerate: () => void;
 }
@@ -123,6 +125,8 @@ export function VideoOperationPanel({
   onH3OfficialFormatChange,
   h3Quality,
   onH3QualityChange,
+  h3Sampling,
+  onH3SamplingChange,
   isGenerating,
   onGenerate,
 }: VideoOperationPanelProps) {
@@ -534,6 +538,8 @@ export function VideoOperationPanel({
                 mode={inference?.mode}
                 h3Quality={inference ? effectiveQuality(h3Quality, inference.mode) : undefined}
                 onH3QualityChange={onH3QualityChange}
+                h3Sampling={h3Sampling}
+                onH3SamplingChange={onH3SamplingChange}
                 longTake={longTake}
                 onLongTakeChange={(on) => setWindows(on ? (longTake ? windows : openLongTake(localPrompt || prompt)) : [])}
               />

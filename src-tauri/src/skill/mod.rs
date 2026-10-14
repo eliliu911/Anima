@@ -866,7 +866,7 @@ mod tests {
         }
         let (ok, bad) = list_in_reporting(&root);
         assert!(bad.is_empty(), "这些技能加载失败：{:?}", bad.iter().map(|b| (&b.id, &b.error)).collect::<Vec<_>>());
-        for want in ["ai-storyboard-director", "ai-short-drama-production", "cinematic-video-prompt-engineer", "ai-mandrama-pipeline"] {
+        for want in ["ai-storyboard-director", "ai-short-drama-production", "cinematic-video-prompt-engineer", "ai-mandrama-pipeline", "minimax-h3-combat"] {
             let s = ok.iter().find(|s| s.id == want).unwrap_or_else(|| panic!("{want} 没加载"));
             assert!(!s.name_zh.is_empty() && !s.source.is_empty(), "{want} 缺中文名或来源");
         }

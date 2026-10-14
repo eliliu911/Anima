@@ -657,6 +657,16 @@ fn shot_brief(ctx: &ShotContext) -> String {
             "Segment {} ({}-{}s)「{}」 visual: {} | must not: {} | keep: {} | blocking: {} | camera: {} | sound: {}",
             i + 1, seg.start, seg.end, seg.title.trim(), seg.visual.trim(), seg.forbid.trim(), seg.constraints.trim(), seg.blocking.trim(), seg.camera.trim(), seg.sound.trim()
         ));
+        // 表演合同 / 攻防交换（2026-10-12）：明确交给写手，不让它从长段 visual 里猜（见 `combat` 模块注释）
+        if let Some(p) = seg.performance.as_ref().and_then(crate::combat::performance_brief) {
+            lines.push(format!("  Segment {} performance (write it as visible behaviour, keep every item): {p}", i + 1));
+        }
+        if let Some(e) = seg.exchange.as_ref().and_then(crate::combat::exchange_brief) {
+            lines.push(format!("  Segment {} combat exchange (write exactly this one exchange, nothing extra): {e}", i + 1));
+        }
+    }
+    if !s.combat_style.is_empty() {
+        lines.push(format!("Combat shot, movement language: {} — keep one movement language for the whole shot.", s.combat_style));
     }
     for (i, l) in s.dialogue_lines.iter().filter(|l| !l.line.trim().is_empty()).enumerate() {
         lines.push(format!("[LINE {}] spoken by {}{} (meaning, for timing only — do not copy the words): {}", i + 1, l.speaker.trim(), if l.off_screen { ", off-screen" } else { "" }, l.line.trim()));
@@ -2615,6 +2625,23 @@ mod tests {
         let fallback = format!("<Subject 1> (S1) in a woman's voice, {DELIVERY}");
         let out3 = fill_lines("[Shot 1] <Subject 1> (S1) in a woman's voice, cold and flat says, [LINE 1]", &[m(&fallback)]);
         assert!(out3.contains("cold and flat says, <d>"), "{out3}");
+    }
+
+    /// 表演合同和攻防交换进简报（10-12）；没填的不多出一行
+    #[test]
+    fn 简报带上表演合同和攻防交换() {
+        use crate::shot_table::{Exchange, Performance};
+        let mut s = shot();
+        let a = assets();
+        let plain = shot_brief(&ShotContext { shot: &s, prev: None, assets: &a, style: "", long_take: false });
+        assert!(!plain.contains("performance") && !plain.contains("combat"), "{plain}");
+        s.segments[0].performance = Some(Performance { performer: "皇帝".into(), gaze: "从诗稿移到她脸上".into(), face: vec!["下眼睑收紧".into()], ..Default::default() });
+        s.segments[0].exchange = Some(Exchange { attacker: "皇帝".into(), attack: "拍案".into(), ..Default::default() });
+        s.combat_style = "melee".into();
+        let b = shot_brief(&ShotContext { shot: &s, prev: None, assets: &a, style: "", long_take: false });
+        assert!(b.contains("Segment 1 performance (write it as visible behaviour, keep every item): performer: 皇帝 | gaze: 从诗稿移到她脸上 | face: 下眼睑收紧"), "{b}");
+        assert!(b.contains("Segment 1 combat exchange (write exactly this one exchange, nothing extra): attacker: 皇帝 | attack path: 拍案"), "{b}");
+        assert!(b.contains("Combat shot, movement language: melee"), "{b}");
     }
 
     /// 交给翻译的是「情绪｜台词：原文」—— 没有原文就判断不了重音落在哪

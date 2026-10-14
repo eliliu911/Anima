@@ -28,6 +28,7 @@ pub mod app_root;
 pub mod keep_awake;
 pub mod long_take;
 pub mod long_video;
+pub mod combat;
 pub mod long_shot;
 pub mod one_take;
 pub mod launch_path;

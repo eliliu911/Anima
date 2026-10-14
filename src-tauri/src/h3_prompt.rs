@@ -321,7 +321,7 @@ mod live {
 
     async fn render(name: &str, prompt: &str) -> std::path::PathBuf {
         use crate::agent_runtime::weetodd;
-        let graph = weetodd::build_h3_graph(&weetodd::H3Params {
+        let graph = weetodd::build_h3_graph(&weetodd::H3Params { sampler: Default::default(),
             continuity: None,
             mode: weetodd::H3Mode::Text,
             prompt,

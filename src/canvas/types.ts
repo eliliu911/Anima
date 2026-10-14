@@ -358,6 +358,20 @@ export interface AudioNodeData {
   secs?: number;
   isGenerating?: boolean;
   error?: string;
+  /** 上传的音频（不是生成的）：`label` 是文件名。2026-10-13 起一个音频节点能上传也能生成（照 LibTV） */
+  uploaded?: boolean;
+  label?: string;
+  referenceLoading?: boolean;
+  /** 声音复制：参考音频说的话（用户改过的）。空 = 自动转写 */
+  refText?: string;
+  /** 上一次复制实际用的参考（后端回的） */
+  cloneUsed?: { ref_text: string; ref_text_edited: boolean; from_secs: number; to_secs: number; source_secs: number; padded: boolean; ref_path: string };
+  /** 高级设置（照 LibTV）：语速倍数、声调半音、音量倍数、采样率、输出格式 */
+  speed?: number;
+  pitch?: number;
+  volume?: number;
+  sampleRate?: 8000 | 16000 | 24000 | 48000;
+  format?: "wav" | "mp3" | "pcm" | "ogg_opus";
   [key: string]: unknown;
 }
 
@@ -482,6 +496,8 @@ export interface VideoGenNodeData {
   generateAudio?: boolean;
   /** H3 加速档（`lightx2v` / `standard` / `staged` / `dense`）。空 = 按链路默认（首帧 LightX2V、参考 Larry 6、文生 Larry 4），见 `utils/h3Quality` */
   h3Quality?: string;
+  /** H3 采样方法（`euler` / `res_multistep`）。空 = euler */
+  h3Sampling?: string;
   /** H3 出片前按官方格式整理提示词（只动格式、不改正文；默认关）。见 Rust `h3_spec::canvas_official` */
   h3OfficialFormat?: boolean;
   outputVideos?: string[];

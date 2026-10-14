@@ -187,6 +187,13 @@ pub struct RenderSettings {
     /// 台词字幕烧进画面
     #[serde(default = "default_true")]
     pub burn_subtitles: bool,
+    /// H3 的采样方法（2026-10-12）。默认 euler；Combat 类 LoRA 作者推荐 res_multistep（见 `weetodd::H3Sampler`）
+    #[serde(default, skip_serializing_if = "crate::combat::is_default_sampler")]
+    pub sampling: crate::agent_runtime::weetodd::H3Sampler,
+    /// **战斗 LoRA 预设**：打斗镜按它的动作类型（`StoryboardShot::combat_style`）挂这一组 LoRA + 触发词。
+    /// 键是动作类型 id（unarmed / melee / gunfu / energy / xianxia）。空 = 打斗镜也不挂（具体配哪些等 A/B 定）
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub combat: std::collections::BTreeMap<String, crate::combat::CombatPreset>,
 }
 
 fn default_keyframe_quality() -> RenderQuality {
@@ -204,7 +211,7 @@ fn default_true() -> bool {
 
 impl Default for RenderSettings {
     fn default() -> Self {
-        Self { quality: RenderQuality::default(), keyframe_quality: default_keyframe_quality(), resolution: default_render_resolution(), aspect: String::new(), takes: 1, generate_audio: true, burn_subtitles: default_burn_subtitles() }
+        Self { quality: RenderQuality::default(), keyframe_quality: default_keyframe_quality(), resolution: default_render_resolution(), aspect: String::new(), takes: 1, generate_audio: true, burn_subtitles: default_burn_subtitles(), sampling: Default::default(), combat: Default::default() }
     }
 }
 
@@ -787,6 +794,10 @@ pub struct StoryboardShot {
     /// 实际走哪条仍看有没有首帧（`shot_route::actual_route`）：选了参考的不出首帧，选了首帧的照常要出首帧。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub route_choice: Option<crate::shot_route::ShotRoute>,
+    /// **打斗镜的动作类型**（2026-10-12 打斗编排）：`unarmed` 徒手 / `melee` 冷兵器 / `gunfu` 枪斗 / `energy` 能量武器 / `xianxia` 仙侠。
+    /// 空 = 不是打斗镜。镜头表按剧本判断，镜头详情能改；出片时据此挂项目设置里的战斗 LoRA 预设。
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub combat_style: String,
     /// 这一镜**动起来**的部分：谁在动、怎么动、事情怎么发展。
     ///
     /// # 为什么和 `prompt` 分开
@@ -6137,6 +6148,10 @@ fn timeline_issues(shots: &[StoryboardShot], assets: &[crate::storyboard_gen::As
         for m in crate::timeline_lint::unsourced_people(&shot.source, &shot.segments, &cast, &library) {
             out.push(crate::shot_table::ShotIssue { shot_num: shot.shot_num, field: "advice", message: format!("{m} —— 多半是写时间线时加出来的，H3 会照着多画一个人。剧本里确实有就补进出场 / 剧本，没有就从时间线删掉") });
         }
+        // 表演合同 / 打斗（10-12）：只查填了合同、交换的段，不挡出片
+        for m in crate::timeline_lint::performance_advice(shot).into_iter().chain(crate::timeline_lint::combat_advice(shot)) {
+            out.push(crate::shot_table::ShotIssue { shot_num: shot.shot_num, field: "advice", message: m });
+        }
     }
     out
 }
@@ -7139,7 +7154,35 @@ pub(crate) fn video_prompt_for_render(shot: &StoryboardShot, route: crate::shot_
 }
 
 
+/// 出一镜。外层只做一件事：把这一镜的**出片额外设置**（项目的采样方法；打斗镜按动作类型挂战斗 LoRA 预设）
+/// 放进作用域，H3 建图时自己取（`weetodd::with_extras`）。正文在 `render_shot_video_body`
 pub async fn cinema_render_shot_video_with_config_dir(
+    config_dir: &Path,
+    req: RenderShotReq,
+) -> Result<RenderShotResult> {
+    let extras = shot_render_extras(config_dir, &req);
+    if !extras.loras.is_empty() {
+        tracing::info!(shot = %req.shot_id, loras = ?extras.loras, trigger = %extras.trigger, "打斗镜挂战斗 LoRA 预设");
+    }
+    crate::agent_runtime::weetodd::with_extras(extras, render_shot_video_body(config_dir, req)).await
+}
+
+/// 读项目出片设置 + 这一镜的打斗类型，算出额外设置。读不到就是默认（euler、不挂）
+fn shot_render_extras(config_dir: &Path, req: &RenderShotReq) -> crate::agent_runtime::weetodd::H3Extras {
+    let proj_dir = cinema_projects_dir(config_dir).join(&req.project_id);
+    let render = std::fs::read_to_string(proj_dir.join("project.json")).ok()
+        .and_then(|c| serde_json::from_str::<CinemaProject>(&c).ok())
+        .map(|p| p.model_settings.render)
+        .unwrap_or_default();
+    let style = std::fs::read_to_string(proj_dir.join("episodes").join(&req.episode_id).join("episode.json")).ok()
+        .and_then(|c| serde_json::from_str::<EpisodeData>(&c).ok())
+        .and_then(|ep| ep.storyboard.into_iter().find(|s| s.id == req.shot_id))
+        .map(|s| s.combat_style)
+        .unwrap_or_default();
+    crate::combat::extras_for(&render, &style)
+}
+
+async fn render_shot_video_body(
     config_dir: &Path,
     req: RenderShotReq,
 ) -> Result<RenderShotResult> {
@@ -9060,7 +9103,7 @@ fn create_sample_project(root: &Path) -> Result<CinemaProject> {
         target_secs: 0,
         storyboard_version: STORYBOARD_VERSION, actor_colors: Vec::new(),
         storyboard: vec![
-            StoryboardShot {
+            StoryboardShot { combat_style: String::new(),
                 look_overrides: Default::default(),
                 one_take: false,
             end_frame: String::new(),
@@ -9093,7 +9136,7 @@ fn create_sample_project(root: &Path) -> Result<CinemaProject> {
                 continues_previous: false,
                 status: "ready".to_string(),
             },
-            StoryboardShot {
+            StoryboardShot { combat_style: String::new(),
                 look_overrides: Default::default(),
                 one_take: false,
             end_frame: String::new(),
@@ -9126,7 +9169,7 @@ fn create_sample_project(root: &Path) -> Result<CinemaProject> {
                 continues_previous: false,
                 status: "ready".to_string(),
             },
-            StoryboardShot {
+            StoryboardShot { combat_style: String::new(),
                 look_overrides: Default::default(),
                 one_take: false,
             end_frame: String::new(),
@@ -9341,7 +9384,7 @@ mod continuity_tests {
     use super::*;
 
     fn 镜(prompt: &str, dialogue: &str) -> StoryboardShot {
-        StoryboardShot {
+        StoryboardShot { combat_style: String::new(),
             one_take: false,
             continuity: Default::default(),
             continuity_manual: false, route_choice: None,
@@ -9528,7 +9571,7 @@ mod continuity_tests {
         for (i, src) in shots.iter().enumerate() {
             let id = format!("s{}", i + 1);
             std::fs::copy(src, ep_dir.join("shots").join(format!("{id}.mp4"))).unwrap();
-            board.push(StoryboardShot {
+            board.push(StoryboardShot { combat_style: String::new(),
                 one_take: false,
                 continuity: Default::default(),
                 continuity_manual: false, route_choice: None,
@@ -9631,7 +9674,7 @@ mod continuity_tests {
     }
 
     fn shot(id: &str, num: u32, cont: bool) -> StoryboardShot {
-        StoryboardShot {
+        StoryboardShot { combat_style: String::new(),
             one_take: false,
             continuity: Default::default(),
             continuity_manual: false, route_choice: None,
@@ -11281,7 +11324,7 @@ mod continuity_tests {
     #[test]
     fn 超长镜出片走窗口链() {
         let src = include_str!("cinema.rs");
-        let at = src.find("pub async fn cinema_render_shot_video_with_config_dir").unwrap();
+        let at = src.find("async fn render_shot_video_body").unwrap();
         let body = &src[at..at + src[at..].find("shot_vid_path = take_path.clone();").unwrap()];
         let branch = &body[body.find("if long_shot {").expect("超长镜分支不见了")..body.find("} else if engine == \"h3\" && keyframe_video {").unwrap()];
         for needle in ["crate::long_shot::split_prompt(&prompt)", "render_reference_paths(config_dir, &req.project_id, &req.episode_id, &shots_dir, shot, &assets, true)", "render_refs_guard(shot.shot_num, part,", "render_long_take("] {
@@ -12173,7 +12216,7 @@ mod continuity_tests {
     #[test]
     fn 出片按线路存每一次_过期提示词先拦下() {
         let src = include_str!("cinema.rs");
-        let at = src.find("pub async fn cinema_render_shot_video_with_config_dir").unwrap();
+        let at = src.find("async fn render_shot_video_body").unwrap();
         let body = &src[at..at + src[at..].find("\n}\n").unwrap()];
         assert!(body.contains("shots_dir.join(format!(\"{}-{}-{}.mp4\", shot_id_for_path, route_key, crate::jobs::now()))"));
         assert!(body.contains("shot.takes.push(VideoTake {"));
@@ -15276,7 +15319,7 @@ mod director_camera_binding_tests {
         // 后面的生产代码就被截掉，断言「不包含 X」的钉子会假绿（2026-09-27 51e293c3）。
         let src = include_str!("cinema.rs");
         let first_test = src.find("#[cfg(test)]").unwrap();
-        for f in ["pub async fn cinema_render_shot_video_with_config_dir", "pub async fn render_batch", "fn studio_frame_args"] {
+        for f in ["pub async fn cinema_render_shot_video_with_config_dir", "async fn render_shot_video_body", "pub async fn render_batch", "fn studio_frame_args"] {
             assert!(src.find(f).unwrap() < first_test, "{f} 在第一个 #[cfg(test)] 之后 —— 测试模块别插在生产代码中间");
         }
     }

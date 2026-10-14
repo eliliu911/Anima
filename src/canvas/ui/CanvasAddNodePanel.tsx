@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Volume2,
   Type,
   ImageIcon,
   Video,
@@ -88,16 +87,6 @@ const ALL_ITEMS: NodeMenuItem[] = [
     bg: "bg-white/5 border-white/10",
   },
   {
-    // 配音能力早就有（cinema_dub），但绑死在「某一集的某一镜」上 ——
-    // 换个音色要走「改角色资产 → 整镜重新配音 → 听」，比三把嗓子得来回三趟。
-    type: "audio",
-    label: "试音色",
-    hint: "同一段词换几把嗓子并排听。左边接个提示词或分镜节点，几个音色节点就念同一段。注意：配音会顶掉 H3 原声，口型会对不上",
-    icon: Volume2,
-    color: "text-white/80",
-    bg: "bg-white/5 border-white/10",
-  },
-  {
     // 照 libtv：视频 → 深度动作捕捉 → 视频（+ 人物图）= 把动作换到别人身上
     type: "depthCapture",
     label: "深度动作捕捉",
@@ -115,10 +104,11 @@ const ALL_ITEMS: NodeMenuItem[] = [
     bg: "bg-white/5 border-white/10",
   },
   {
-    // 放进来的音频（歌 / 人声 / 音效），接视频节点当 H3 参考音频 <Audio N>。和「试音色」（念出来的）不是一回事
-    type: "audioClip",
+    // **一个音频节点干三件事**（用户 2026-10-13：「直接把两个合并起来，不要试音色了，就跟 libtv 一致」）：
+    // 上传一段 = 素材；打字生成 = 文字转语音；左边连一个音频 = 声音复制。老画布上的「音频素材」（audioClip）照旧能用
+    type: "audio",
     label: "音频",
-    hint: "放一段本机音频（歌、人声、音效），连到视频节点上当参考音频 <Audio 1>。H3 参考生视频，还要再连至少一张图",
+    hint: "上传一段音频，或打字生成语音；左边连一段音频进来就是声音复制。连到视频节点上 = H3 参考音频 <Audio N>",
     icon: Music,
     color: "text-white/80",
     bg: "bg-white/5 border-white/10",
@@ -202,7 +192,6 @@ export const MENU_ORDER: { label: string; tier: MenuTier }[] = [
   { label: "视频", tier: "main" },
   { label: "深度动作捕捉", tier: "tool" },
   { label: "超分 ×2", tier: "tool" },
-  { label: "试音色", tier: "tool" },
   { label: "LoRA", tier: "tool" },
   { label: "分镜", tier: "tool" },
   { label: "镜头上下文", tier: "tool" },

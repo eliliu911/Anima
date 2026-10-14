@@ -4,6 +4,7 @@ import { useCanvasStore } from "../store/useCanvasStore";
 import { inferVideoMode } from "./videoMode";
 import { audioLengthNote, emptyUpstreamAudios, isAudioFile, videoInputAudios } from "./audioClips";
 import { compileAudioMentions, compilePromptMentions } from "./referenceMentions";
+import { aggregateNodeInputs } from "../engine/dagExecutor";
 import { ADD_NODE_ITEMS } from "../ui/CanvasAddNodePanel";
 
 /** 用户 2026-10-08：画布里加音频参考（像参考图一样）；「上传资源」自动认音频；额外加「音频」节点 */
@@ -77,7 +78,9 @@ describe("画布参考音频", () => {
   });
 
   it("加节点菜单有「音频」；上传资源图片和音频都收；执行器把音频发出去", () => {
-    expect(ADD_NODE_ITEMS.find((i) => i.label === "音频")?.type).toBe("audioClip");
+    expect(ADD_NODE_ITEMS.find((i) => i.label === "音频")?.type).toBe("audio");
+    // 2026-10-13 合并：只剩一个「音频」，没有「试音色」了（照 LibTV）
+    expect(ADD_NODE_ITEMS.find((i) => i.label === "试音色")).toBeUndefined();
     const img = readFileSync(new URL("../nodes/ImageGenNode.tsx", import.meta.url), "utf8");
     expect(img).toContain("<CanvasMediaUploadButton nodeId={id} />");
     const btn = readFileSync(new URL("../ui/CanvasMediaUploadButton.tsx", import.meta.url), "utf8");
@@ -87,5 +90,90 @@ describe("画布参考音频", () => {
     expect(exec.indexOf("compileAudioMentions(promptToUse")).toBeLessThan(exec.indexOf("compilePromptMentions(promptToUse, resolvedRefs"));
     const view = readFileSync(new URL("../CanvasView.tsx", import.meta.url), "utf8");
     expect(view).toContain("audioClip: memo(AudioClipNodeComponent),");
+  });
+});
+
+// 2026-10-13 用户：「试音色」念出来的连到视频节点当参考音频（以前连上去被静默忽略）
+describe("试音色念出来的当参考音频", () => {
+  function tts(target: string, extra: Record<string, unknown>) {
+    const s = useCanvasStore.getState();
+    const id = s.addNode("audio", { x: 0, y: 0 }, extra);
+    s.setEdges([...useCanvasStore.getState().edges, { id: `e-${id}`, source: id, target, sourceHandle: "audio-out", targetHandle: "prompt-in" }]);
+    return id;
+  }
+
+  it("念好了的进参考音频，和音频素材按连线顺序排；名字带实际用的音色", () => {
+    const s = useCanvasStore.getState();
+    const v = s.addNode("videoGen");
+    tts(v, { outputAudioUrl: "/tts/line1.wav", usedVoice: "星澜", voice: "星澜", secs: 3.2 });
+    audio(v, "/song.wav", "青花瓷");
+    const { nodes, edges } = graph();
+    expect(videoInputAudios(v, nodes, edges).map((a) => [a.path, a.name, a.secs])).toEqual([["/tts/line1.wav", "音频 · 星澜", 3.2], ["/song.wav", "青花瓷", 15]]);
+    expect(inferVideoMode(v, nodes, edges).mode).toBe("r2v");
+  });
+
+  it("还没念的算「连着但空」，点生成时报", () => {
+    const s = useCanvasStore.getState();
+    const v = s.addNode("videoGen");
+    tts(v, { text: "零号，你逃不掉的。" });
+    const { nodes, edges } = graph();
+    expect(videoInputAudios(v, nodes, edges)).toEqual([]);
+    expect(emptyUpstreamAudios(v, nodes, edges)).toBe(1);
+  });
+
+  it("试音色上游那段台词不会混进视频提示词（音频节点是提示词边界）", () => {
+    const s = useCanvasStore.getState();
+    const v = s.addNode("videoGen");
+    const a = tts(v, { outputAudioUrl: "/tts/line1.wav" });
+    const p = s.addNode("prompt", { x: 0, y: 0 }, { prompt: "零号，你逃不掉的。" });
+    const film = s.addNode("prompt", { x: 0, y: 0 }, { prompt: "rooftop at dawn" });
+    s.setEdges([...useCanvasStore.getState().edges,
+      { id: "e-p", source: p, target: a, sourceHandle: "text-out", targetHandle: "text-in" },
+      { id: "e-f", source: film, target: v, sourceHandle: "text-out", targetHandle: "prompt-in" }]);
+    const { nodes, edges } = graph();
+    const got = aggregateNodeInputs(v, nodes, edges).combinedPrompt;
+    expect(got).toContain("rooftop at dawn");
+    expect(got).not.toContain("逃不掉");
+  });
+});
+
+// 2026-10-13 声音复制（照 LibTV：上游连进来的音频节点 = 参考）
+describe("声音复制的参考音频", () => {
+  it("直接连着的音频素材 / 念好的试音色当参考；没音频的算空；pcm 不算", async () => {
+    const { referenceAudio, emptyReferenceAudio, upstreamSpeechText, canClone } = await import("./audioChain");
+    const s = useCanvasStore.getState();
+    const target = s.addNode("audio", { x: 0, y: 0 }, { text: "新台词" });
+    const clip = s.addNode("audioClip", { x: 0, y: 0 }, { label: "星澜原声", audioPath: "/baiye.wav" });
+    s.setEdges([{ id: "e1", source: clip, target, sourceHandle: "audio-out", targetHandle: "text-in" }]);
+    let g = graph();
+    expect(referenceAudio(target, g.nodes, g.edges)).toEqual({ path: "/baiye.wav", name: "星澜原声", nodeId: clip });
+    // 参考那条上游的词不会被拿来念
+    const p = s.addNode("prompt", { x: 0, y: 0 }, { prompt: "参考念的那句" });
+    s.setEdges([...useCanvasStore.getState().edges, { id: "e2", source: p, target: clip, sourceHandle: "text-out", targetHandle: "text-in" }]);
+    g = graph();
+    expect(upstreamSpeechText(target, g.nodes, g.edges)).toBe("");
+    // 换成还没念的试音色当参考：空 → 要提醒
+    const tts = s.addNode("audio", { x: 0, y: 0 }, {});
+    s.setEdges([{ id: "e3", source: tts, target, sourceHandle: "audio-out", targetHandle: "text-in" }]);
+    g = graph();
+    expect(referenceAudio(target, g.nodes, g.edges)).toBeNull();
+    expect(emptyReferenceAudio(target, g.nodes, g.edges)).toBe(true);
+    useCanvasStore.getState().updateNodeData(tts, { outputAudioUrl: "/x.pcm" });
+    g = graph();
+    expect(referenceAudio(target, g.nodes, g.edges)).toBeNull();
+    useCanvasStore.getState().updateNodeData(tts, { outputAudioUrl: "/x.wav", usedVoice: "星澜" });
+    g = graph();
+    expect(referenceAudio(target, g.nodes, g.edges)?.path).toBe("/x.wav");
+    expect(canClone("gpt_sovits") && canClone("cosy_voice2") && canClone("index_tts2")).toBe(true);
+    expect(canClone("edge") || canClone("openai_compatible") || canClone("f5_tts")).toBe(false);
+  });
+
+  it("pcm 不当视频的参考音频", () => {
+    const s = useCanvasStore.getState();
+    const v = s.addNode("videoGen");
+    const a = s.addNode("audio", { x: 0, y: 0 }, { outputAudioUrl: "/x.pcm" });
+    s.setEdges([{ id: "e", source: a, target: v, sourceHandle: "audio-out", targetHandle: "prompt-in" }]);
+    const g = graph();
+    expect(videoInputAudios(v, g.nodes, g.edges)).toEqual([]);
   });
 });

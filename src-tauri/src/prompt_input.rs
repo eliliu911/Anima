@@ -349,6 +349,10 @@ pub(crate) fn fields_json(ctx: &ShotContext) -> serde_json::Value {
     if shot.one_take {
         fields["one_take"] = serde_json::json!(true);
     }
+    // 打斗镜的动作类型进了正文（写手按它选动作语言）。同样只在有的时候加键
+    if !shot.combat_style.is_empty() {
+        fields["combat_style"] = serde_json::json!(shot.combat_style);
+    }
     // 这一场的固定布景进了正文（线路 A 的背景场景、线路 B 的 Scene staging）。
     // **只在有的时候加键** —— 老镜头没有，指纹一个字不变，不误报「要重新合成」
     if !shot.stage.is_empty() {

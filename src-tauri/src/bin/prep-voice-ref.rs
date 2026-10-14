@@ -23,85 +23,8 @@ use std::path::{Path, PathBuf};
 
 use anima_lib::stt::{self, whisper::WhisperStt, SpeechToText, SttConfig};
 
-/// Whisper 的输入采样率。它只吃 16kHz
-const WHISPER_HZ: u32 = 16_000;
-
-/// 参考音频写出的采样率。和音色库里其它参考保持一致
-const OUT_HZ: u32 = 24_000;
-
-/// 默认裁多长。8 秒是实测的甜点：够模型抓稳音色，又不会让每次合成都变慢
-const DEFAULT_SECONDS: f32 = 8.0;
-
-fn resample(x: &[f32], from: u32, to: u32) -> Vec<f32> {
-    if from == to || x.is_empty() {
-        return x.to_vec();
-    }
-    let n = ((x.len() as f64) * to as f64 / from as f64).round() as usize;
-    // 线性插值：参考音频只是给模型听音色、给 ASR 认字，不进最终输出
-    (0..n)
-        .map(|i| {
-            let pos = i as f64 * from as f64 / to as f64;
-            let i0 = pos.floor() as usize;
-            let frac = (pos - i0 as f64) as f32;
-            let a = x.get(i0).copied().unwrap_or(0.0);
-            let b = x.get(i0 + 1).copied().unwrap_or(a);
-            a + (b - a) * frac
-        })
-        .collect()
-}
-
-/// 在整段里找最适合当参考的那个窗口。
-///
-/// 判据是**有声比例最高**，而不是能量最大：能量最大的窗口往往是一句喊叫或大笑，
-/// 那个语气会渗进之后所有的合成。有声比例高意味着"一直在正常说话"。
-///
-/// 窗口起点还要对齐到静音处 —— 从一个字中间切进去，参考的第一个音素就是残缺的。
-fn best_window(x: &[f32], sr: u32, want: usize) -> (usize, usize) {
-    if x.len() <= want {
-        return (0, x.len());
-    }
-    let hop = (sr / 50).max(1) as usize; // 20ms
-    let frames: Vec<f32> = x
-        .chunks(hop)
-        .map(|c| (c.iter().map(|v| v * v).sum::<f32>() / c.len() as f32).sqrt())
-        .collect();
-    let peak = frames.iter().copied().fold(0.0f32, f32::max);
-    if peak <= 0.0 {
-        return (0, want.min(x.len()));
-    }
-    let voiced: Vec<bool> = frames.iter().map(|&v| v > peak * 0.06).collect();
-    let win_frames = (want / hop).max(1);
-
-    // 滑动统计有声帧数
-    let mut count: i64 = voiced[..win_frames.min(voiced.len())]
-        .iter()
-        .filter(|&&v| v)
-        .count() as i64;
-    let mut best = (0usize, count);
-    for start in 1..voiced.len().saturating_sub(win_frames) {
-        if voiced[start - 1] {
-            count -= 1;
-        }
-        if voiced[start + win_frames - 1] {
-            count += 1;
-        }
-        if count > best.1 {
-            best = (start, count);
-        }
-    }
-
-    // 把起点往前挪到最近的静音帧：从字中间切进去会让第一个音素残缺
-    let mut start_frame = best.0;
-    for back in 0..win_frames.min(start_frame) {
-        if !voiced[start_frame - back] {
-            start_frame -= back;
-            break;
-        }
-    }
-    let from = (start_frame * hop).min(x.len());
-    let to = (from + want).min(x.len());
-    (from, to)
-}
+// 裁窗口、重采样和这几个常量在库里（`tts::clone_ref`），画布「声音复制」也用同一套
+use anima_lib::tts::clone_ref::{best_window, resample, DEFAULT_SECONDS, OUT_HZ, WHISPER_HZ};
 
 fn write_wav(path: &Path, samples: &[f32], sr: u32) -> Result<(), String> {
     let wav = anima_lib::audio::playback::encode_mono_wav(samples, sr);

@@ -6,7 +6,7 @@
  */
 import { useRef, useState } from "react";
 import type { AssetView } from "../../../api/assets";
-import { cinemaPickTake, type PromptRoute, type RefSlot, type ShotIssue, type ShotRouteInfo, type ShotSegment, type StoryboardShot } from "../../../api/cinema";
+import { cinemaPickTake, COMBAT_STYLES, type CombatStyle, type PromptRoute, type RefSlot, type ShotIssue, type ShotRouteInfo, type ShotSegment, type StoryboardShot } from "../../../api/cinema";
 import { withDuration } from "./retime";
 import { longShotHint, MAX_LONG_SHOT_SECS } from "./longShot";
 import type { IssueFixOffer } from "../../../api/cinema";
@@ -21,6 +21,10 @@ import { addSlot, defaultUsage, MANUAL_USAGES, removeSlot } from "./refSlots";
 import { withoutLegacyDirectorMarkers } from "../../../canvas/pano/directorLinks";
 import { shotDensity, TARGET_CPS, THIN_CPS, thinSegments } from "./timelineDensity";
 import { stageLines } from "./sceneStage";
+import { SegmentContracts } from "./SegmentContracts";
+
+/** 远景 / 全景：五官看不清（和 Rust `timeline_lint::is_wide` 同一组词） */
+const isWideScale = (scale?: string) => /远景|全景|wide|extreme long/i.test(scale ?? "");
 
 const USAGE_LABEL: Record<RefSlot["usage"], string> = {
   identity: "身份",
@@ -228,6 +232,12 @@ export function ShotDetail({
   const segments = draft.segments ?? [];
   const setSegment = (i: number, p: Partial<ShotSegment>) =>
     patch({ segments: segments.map((s, j) => (j === i ? { ...s, ...p } : s)) });
+  /** 改一段并**立刻保存**（点标签、清空合同）：拿改后的那份去存，不等下一轮渲染 */
+  const commitSegment = (i: number, p: Partial<ShotSegment>) => {
+    const next = { ...draft, segments: segments.map((s, j) => (j === i ? { ...s, ...p } : s)) };
+    setDraft(next);
+    void save(next);
+  };
   const nameOf = (id: string) => assets.find((a) => a.id === id)?.name ?? id;
   const director = directorBinding(draft);
 
@@ -475,6 +485,15 @@ export function ShotDetail({
             </div>
           );
         })()}
+        <label className="mb-2 flex items-center gap-2 text-[12px]">
+          <span style={{ color: "var(--studio-text-muted)" }}>打斗</span>
+          <select className={INPUT} style={{ ...INPUT_STYLE, width: "auto" }} value={draft.combat_style ?? ""}
+            onChange={(e) => { const next = { ...draft, combat_style: e.target.value as CombatStyle }; setDraft(next); void save(next); }}>
+            <option value="">不是打斗镜</option>
+            {COMBAT_STYLES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+          <span className="text-[11px]" style={{ color: "var(--studio-text-muted)" }}>打斗镜每段写一个攻防交换；出片时挂项目设置里这一类的战斗 LoRA</span>
+        </label>
         <div className="flex flex-col gap-2">
           {segments.map((seg, i) => (
             <div key={i} className="flex flex-col gap-1 rounded-md px-2 py-2" style={{ background: "var(--studio-bg-elevated)" }}>
@@ -491,6 +510,8 @@ export function ShotDetail({
                 <SegText label="运镜" value={seg.camera} onChange={(v) => setSegment(i, { camera: v })} onBlur={() => save()} />
               </div>
               <SegText label="声音" value={seg.sound} onChange={(v) => setSegment(i, { sound: v })} onBlur={() => save()} />
+              <SegmentContracts seg={seg} wide={isWideScale(draft.scale)}
+                onChange={(p) => setSegment(i, p)} onCommit={(p) => commitSegment(i, p)} onBlur={() => save()} />
             </div>
           ))}
           {segments.length === 0 && <p className="text-[12px]" style={{ color: "var(--studio-text-muted)" }}>没有时间段</p>}

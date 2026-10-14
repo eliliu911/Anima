@@ -118,3 +118,68 @@ export function arrangePositions(nodes: CanvasNode[], edges: CanvasEdge[], mode:
   }
   return out;
 }
+
+/** 组和组之间的间距（比节点之间的大，一眼看出是两套） */
+export const COMPONENT_GAP = GAP * 3;
+
+/**
+ * 按连线分成互不相连的几组（无向）。没有任何连线的散节点归成一组「散件」，排在最后。
+ * 组的顺序 = 现在的位置（组里最靠上的那个，再看最靠左）—— 整理完上下关系不变。
+ */
+export function components(nodes: CanvasNode[], edges: CanvasEdge[]): CanvasNode[][] {
+  const ids = new Set(nodes.map((n) => n.id));
+  const parent = new Map(nodes.map((n) => [n.id, n.id]));
+  const find = (x: string): string => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    parent.set(x, r);
+    return r;
+  };
+  const linked = new Set<string>();
+  edges.forEach((e) => {
+    if (!ids.has(e.source) || !ids.has(e.target) || e.source === e.target) return;
+    linked.add(e.source); linked.add(e.target);
+    parent.set(find(e.source), find(e.target));
+  });
+  const groups = new Map<string, CanvasNode[]>();
+  const loose: CanvasNode[] = [];
+  nodes.forEach((n) => {
+    if (!linked.has(n.id)) { loose.push(n); return; }
+    const r = find(n.id);
+    (groups.get(r) ?? groups.set(r, []).get(r)!).push(n);
+  });
+  const key = (g: CanvasNode[]) => {
+    const top = Math.min(...g.map((n) => n.position.y));
+    const left = Math.min(...g.map((n) => n.position.x));
+    return [top, left] as const;
+  };
+  const sorted = [...groups.values()].sort((a, b) => key(a)[0] - key(b)[0] || key(a)[1] - key(b)[1]);
+  return loose.length ? [...sorted, loose] : sorted;
+}
+
+/**
+ * **整张画布的整理：每套工作流各排各的。**（用户 2026-10-13：「当有多组工作流的时候，不同工作流里的节点会混在一起」）
+ *
+ * 以前整张画布当一张图分层 —— 两套工作流的第 0 层（参考图）进同一列、第 1 层（视频）进同一列，交错在一起。
+ * 现在先按连线分组（[`components`]），每组用 [`arrangePositions`] 排好，
+ * 横向排法的组从上往下摞、纵向排法的组从左往右摆，组间留 [`COMPONENT_GAP`]。
+ */
+export function arrangeAll(nodes: CanvasNode[], edges: CanvasEdge[], mode: ArrangeMode): Map<string, Pos> {
+  const out = new Map<string, Pos>();
+  const size = new Map(nodes.map((n) => [n.id, nodeSize(n)]));
+  // 横向：组往下摞（offset 是 y）；纵向：组往右摆（offset 是 x）；网格：往下摞
+  const stackDown = mode !== "vertical";
+  let offset = stackDown ? ORIGIN.y : ORIGIN.x;
+  for (const group of components(nodes, edges)) {
+    const pos = arrangePositions(group, edges, mode);
+    let lo = Infinity, hi = -Infinity;
+    pos.forEach((p, id) => {
+      const s = size.get(id)!;
+      lo = Math.min(lo, stackDown ? p.y : p.x);
+      hi = Math.max(hi, stackDown ? p.y + s.height : p.x + s.width);
+    });
+    pos.forEach((p, id) => out.set(id, stackDown ? { x: p.x, y: p.y - lo + offset } : { x: p.x - lo + offset, y: p.y }));
+    offset += hi - lo + COMPONENT_GAP;
+  }
+  return out;
+}

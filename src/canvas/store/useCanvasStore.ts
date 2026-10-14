@@ -10,7 +10,7 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import type { CanvasNode, CanvasEdge, CanvasNodeType, CanvasReference } from "../types";
-import { ARRANGE_MODES, arrangePositions, type ArrangeMode } from "../utils/arrange";
+import { ARRANGE_MODES, arrangeAll, type ArrangeMode } from "../utils/arrange";
 import { nodeReference, referenceGraph } from "../utils/referenceBindings";
 
 export const CANVAS_STORAGE_KEY_PREFIX = "anima:canvas:project:";
@@ -846,8 +846,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const edges = full.edges
       .map((e) => ({ ...e, source: topOf(e.source), target: topOf(e.target) }))
       .filter((e) => e.source !== e.target);
-    // 算法和三种排法见 `utils/arrange.ts`
-    const pos = arrangePositions(top, edges, use);
+    // 算法和三种排法见 `utils/arrange.ts`；多套工作流各排各的（`arrangeAll`），不混成一张图
+    const pos = arrangeAll(top, edges, use);
     const newNodes = full.nodes.map((n) => (n.parentId || !pos.has(n.id) ? n : ({ ...n, position: pos.get(n.id)! } as CanvasNode)));
 
     // 记住这次用的排法：快捷键 ⌥⇧F 和直接点按钮都按它来

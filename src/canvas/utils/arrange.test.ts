@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { CanvasEdge, CanvasNode } from "../types";
-import { arrangePositions, GAP, type ArrangeMode } from "./arrange";
+import { arrangeAll, arrangePositions, components, GAP, type ArrangeMode } from "./arrange";
 import { nodeSize } from "../group";
 import { useCanvasStore, ARRANGE_MODE_KEY, getStorage } from "../store/useCanvasStore";
 
@@ -100,5 +100,71 @@ describe("整理按钮记住上一次的排法", () => {
     const pa = got.find((x) => x.id === a)!.position, pb = got.find((x) => x.id === b)!.position;
     expect(pb.y).toBeGreaterThan(pa.y);
     expect(pb.x).toBe(pa.x);
+  });
+});
+
+// 2026-10-13 用户：「当有多组工作流的时候，不同工作流里的节点会混在一起」
+describe("多套工作流各排各的（arrangeAll）", () => {
+  /** 两套一样的「4 张参考图 → 2 个视频」，第二套原来摆在第一套右边 */
+  function twoWorkflows() {
+    const nodes: CanvasNode[] = [];
+    const edges: CanvasEdge[] = [];
+    for (const [w, dx] of [["a", 0], ["b", 3000]] as const) {
+      for (let i = 0; i < 4; i++) nodes.push(n(`${w}ref${i}`, "imageGen", dx, i * 430));
+      for (let v = 0; v < 2; v++) {
+        nodes.push(n(`${w}vid${v}`, "videoGen", dx + 600, v * 700, 600));
+        for (let i = 0; i < 4; i++) edges.push(e(`${w}ref${i}`, `${w}vid${v}`));
+      }
+    }
+    nodes.push(n("lonely", "prompt", 9000, 9000));
+    return { nodes, edges };
+  }
+  const box = (nodes: CanvasNode[], pos: Map<string, { x: number; y: number }>, prefix: string) => {
+    const mine = nodes.filter((x) => x.id.startsWith(prefix));
+    return {
+      top: Math.min(...mine.map((x) => pos.get(x.id)!.y)),
+      bottom: Math.max(...mine.map((x) => pos.get(x.id)!.y + nodeSize(x).height)),
+      left: Math.min(...mine.map((x) => pos.get(x.id)!.x)),
+      right: Math.max(...mine.map((x) => pos.get(x.id)!.x + nodeSize(x).width)),
+    };
+  };
+
+  it("按连线分组：两套 + 一个散件，散件排最后", () => {
+    const { nodes, edges } = twoWorkflows();
+    const g = components(nodes, edges).map((c) => c.map((x) => x.id[0]).join(""));
+    expect(g).toHaveLength(3);
+    expect(g[0]).toMatch(/^a+$/);
+    expect(g[1]).toMatch(/^b+$/);
+    expect(g[2]).toBe("l");
+  });
+
+  for (const mode of ["horizontal", "vertical", "grid"] as ArrangeMode[]) {
+    it(`${mode}：两套的范围不交叉，也没有节点重叠`, () => {
+      const { nodes, edges } = twoWorkflows();
+      const pos = arrangeAll(nodes, edges, mode);
+      expect(pos.size).toBe(nodes.length);
+      expect(overlaps(nodes, pos)).toEqual([]);
+      const a = box(nodes, pos, "a"), b = box(nodes, pos, "b");
+      const apart = mode === "vertical" ? a.right < b.left : a.bottom < b.top;
+      expect(apart, JSON.stringify({ a, b })).toBe(true);
+    });
+  }
+
+  it("画布上点「自动整理」走的就是这一套（store 接线）", () => {
+    const { nodes, edges } = twoWorkflows();
+    useCanvasStore.getState().setNodes(nodes);
+    useCanvasStore.getState().setEdges(edges);
+    useCanvasStore.getState().arrangeNodes("horizontal");
+    const got = useCanvasStore.getState().nodes;
+    const pos = new Map(got.map((x) => [x.id, x.position]));
+    const a = box(got, pos, "a"), b = box(got, pos, "b");
+    expect(a.bottom < b.top, JSON.stringify({ a, b })).toBe(true);
+  });
+
+  it("以前的单张图排法会把两套的参考图排进同一列（这条是证明旧行为确实混在一起）", () => {
+    const { nodes, edges } = twoWorkflows();
+    const pos = arrangePositions(nodes, edges, "horizontal");
+    const xs = new Set(nodes.filter((x) => x.id.includes("ref")).map((x) => pos.get(x.id)!.x));
+    expect(xs.size).toBe(1);
   });
 });

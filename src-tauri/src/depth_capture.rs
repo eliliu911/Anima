@@ -568,7 +568,7 @@ pub fn build_depth_video_graph(depth_name: &str, first_frame_name: &str, prompt:
 /// 这条路身份**全程看参考图**（不像 LTX 只从首帧认），所以不用按剪辑点切段 —— 这正是用户选它的理由。
 pub fn build_h3_motion_graph(image_names: &[String], depth_name: &str, prompt: &str, seed: u64, size: (u32, u32), frames: u32, prefix: &str) -> Value {
     use crate::agent_runtime::weetodd::{build_h3_graph, H3Mode, H3Params, H3Tier};
-    let mut g = build_h3_graph(&H3Params {
+    let mut g = build_h3_graph(&H3Params { sampler: Default::default(),
         continuity: None,
         mode: H3Mode::Reference { images: image_names, pixel_budget_percent: 100, audios: &[] },
         prompt: &h3_motion_prompt_multi(prompt, image_names.len()),

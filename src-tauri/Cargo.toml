@@ -4,7 +4,7 @@ name = "anima"
 # Tauri 的 dev 命令正是 `cargo run` —— 表现是应用直接起不来。
 # 这一行把默认定死在应用本体上
 default-run = "anima"
-version = "0.43.42"
+version = "0.43.61"
 description = "Anima —— AI 语音数字人助手"
 authors = ["Anima"]
 edition = "2021"

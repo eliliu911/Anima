@@ -375,7 +375,7 @@ mod tests {
         s.ambient_sound = "空调低频嗡嗡声".into();
         s.scene_items = vec![SceneItem { name: "手机".into(), detail: "长约15厘米，放在键盘右边".into() }];
         s.segments = vec![
-            ShotSegment { start: 0.0, end: 4.0, title: "打字与震动".into(), visual: "双手疯狂敲击键盘，手机不断震动".into(), forbid: "手离开键盘".into(), constraints: "电脑蓝光为主光源".into(), blocking: "直视前方电脑".into(), camera: "固定机位".into(), sound: "急促的键盘声".into() },
+            ShotSegment { performance: None, exchange: None, start: 0.0, end: 4.0, title: "打字与震动".into(), visual: "双手疯狂敲击键盘，手机不断震动".into(), forbid: "手离开键盘".into(), constraints: "电脑蓝光为主光源".into(), blocking: "直视前方电脑".into(), camera: "固定机位".into(), sound: "急促的键盘声".into() },
             ShotSegment { start: 4.0, end: 8.0, title: "晕倒与切黑".into(), visual: "身体向前倒下，最后0.5秒黑屏".into(), ..Default::default() },
         ];
         s.dialogue_lines = vec![DialogueLine { speaker: "林婉清（现代）".into(), line: "我还能撑。".into(), ..Default::default() }];

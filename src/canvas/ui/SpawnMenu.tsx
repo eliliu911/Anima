@@ -13,6 +13,7 @@ const ICON: Record<string, typeof FileText> = {
   imageGen: ImageIcon,
   videoGen: Video,
   audioClip: Music,
+  audio: Music,
   depthCapture: Layers,
   upscale: Maximize2,
 };

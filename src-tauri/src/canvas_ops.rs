@@ -346,6 +346,9 @@ pub struct CanvasLongTakeArgs {
     /// 没给照旧 Standard。以前这里不收，画布长镜头一律走 Standard —— 节点上选了 LightX2V 也不生效
     #[serde(default)]
     pub h3_quality: Option<crate::cinema::RenderQuality>,
+    /// 节点上选的 H3 采样方法（`euler` / `res_multistep`）。不传 = euler
+    #[serde(default)]
+    pub h3_sampling: Option<String>,
     /// 节点上选的 LoRA（`[{name, strength}]`，前端已按引擎核过架构、激活词已拼进各窗口提示词）。
     /// 以前不收 —— 画布上能选、激活词进了提示词，权重没挂
     #[serde(default)]
@@ -416,9 +419,10 @@ pub async fn run_canvas_long_take(
         "kind": "canvas_video", "out": out.to_string_lossy(), "generate_audio": a.generate_audio,
         "summary": format!("长镜头 {} 个窗口 × {:.1} 秒（应用重启后从 ComfyUI 收回）", a.windows.len(), a.window_secs),
     }));
-    crate::agent_runtime::video_tool::render_long_take(
+    let extras = crate::agent_runtime::weetodd::H3Extras { sampler: crate::studio::sampler_of(&a.h3_sampling), ..Default::default() };
+    crate::agent_runtime::weetodd::with_extras(extras, crate::agent_runtime::video_tool::render_long_take(
         &windows, &out, a.window_secs, frames, a.width, a.height, seed, a.generate_audio, a.h3_quality.map(|q| q.tier()), &loras,
-    )
+    ))
     .await?;
     Ok(CanvasLongTakeOut {
         video_path: out.to_string_lossy().to_string(),

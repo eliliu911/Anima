@@ -80,6 +80,8 @@ export function spawnChoices(direction: SpawnDirection, ctx: SpawnContext): Spaw
     const out: SpawnChoice[] = [];
     if (!audio) out.push({ type: "prompt", label: "文本" }, { type: "imageGen", label: "图片" });
     out.push({ type: "videoGen", label: "视频" });
+    // 音频后面接音频 = 声音复制（照 LibTV）
+    if (audio) out.push({ type: "audio", label: "音频", hint: "用这段的嗓子念新的词（声音复制）" });
     if (ctx.isVideo) out.push({ type: "depthCapture", label: "深度动作捕捉", hint: "抽出这段视频里的动作，下一步接视频节点 + 人物图做动作迁移" });
     if (["imageGen", "videoGen", "character", "upscale"].includes(String(t))) out.push({ type: "upscale", label: "超分 ×2", hint: "宽高各放大一倍、细节更锐（RealESRGAN）" });
     if (ctx.hasVideo) out.push({ type: "upscale", label: "补帧 ×2", hint: "帧率翻倍、动作更顺（RIFE），时长和声音不变 · 建好马上跑", action: "interpolate" });
@@ -91,7 +93,9 @@ export function spawnChoices(direction: SpawnDirection, ctx: SpawnContext): Spaw
   const video: SpawnChoice = { type: "videoGen", label: "视频" };
   switch (t) {
     case "videoGen":
-      return [text, { ...image, hint: "连进来挂成参考图" }, { ...video, hint: "连进来当参考视频" }, { type: "audioClip", label: "音频", hint: "连进来当参考音频（H3）" }];
+      return [text, { ...image, hint: "连进来挂成参考图" }, { ...video, hint: "连进来当参考视频" }, { type: "audio", label: "音频", hint: "连进来当参考音频（H3）" }];
+    case "audio":
+      return [text, { type: "audio", label: "音频", hint: "连进来当参考 = 声音复制" }];
     case "imageGen":
       return [text, { ...image, hint: "连进来改这张图" }];
     case "upscale":

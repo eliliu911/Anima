@@ -1075,6 +1075,137 @@ pub struct H3Continuity<'a> {
     pub fps: f64,
 }
 
+/// **H3 的采样方法**（`WeeToddH3GenerationConfig.sampling_method`，节点认 `euler` / `res_multistep`）。
+///
+/// 2026-10-12 打斗 LoRA：Combat Base V2 的作者推荐 `res_multistep`（或 euler + beta 调度器 —— WeeTodd **没有调度器选项**，
+/// 那条用不了）。默认 euler 不变；只有 Larry / LightX2V 这类「不经过预设」的档会用节点 2 的配置，
+/// 走 WeeTodd 预设的档（标准）由预设自己定采样方法，这个设置对它不生效。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum H3Sampler {
+    #[default]
+    Euler,
+    ResMultistep,
+}
+
+impl H3Sampler {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            H3Sampler::Euler => "euler",
+            H3Sampler::ResMultistep => "res_multistep",
+        }
+    }
+    /// 调用方传的字符串；认不出回 None（照旧 euler），不悄悄换成别的
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw.trim() {
+            "euler" => Some(H3Sampler::Euler),
+            "res_multistep" => Some(H3Sampler::ResMultistep),
+            _ => None,
+        }
+    }
+}
+
+/// 出片时的**额外设置**：采样方法 + 额外 LoRA（战斗 LoRA 预设、画布选的 LoRA）。分镜出片、长镜头、超长视频共用
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct H3Extras {
+    pub sampler: H3Sampler,
+    /// （ComfyUI 枚举里的完整名, 强度）
+    pub loras: Vec<(String, f64)>,
+    /// LoRA 的触发词，加在提示词最前面（例：Fight Flow 的 `Melee weapon interaction.`）。只进发给 H3 的那份，不进存下来的合成提示词
+    pub trigger: String,
+}
+
+tokio::task_local! {
+    /// 当前这次出片的额外设置（分镜出片按镜头挂的战斗 LoRA、项目选的采样方法）。
+    /// 和 `jobs::CURRENT` 同一个理由：出片函数一层套一层、各有十来个参数，往下传参漏一处就是「设置了却没生效」且不报错
+    static EXTRAS: H3Extras;
+}
+
+/// 在 `extras` 的作用域里跑 `fut`：里面建的 H3 图都带上它的采样方法和 LoRA
+pub async fn with_extras<F: std::future::Future>(extras: H3Extras, fut: F) -> F::Output {
+    EXTRAS.scope(extras, fut).await
+}
+
+/// 这张图实际用的采样方法和额外 LoRA：参数里给了就用参数的，作用域里的 LoRA 接在后面（同名不重复挂）
+fn effective(sampler: H3Sampler, loras: &[(String, f64)]) -> (H3Sampler, Vec<(String, f64)>, String) {
+    let scoped = EXTRAS.try_with(|e| e.clone()).ok().unwrap_or_default();
+    let sampler = if sampler != H3Sampler::default() { sampler } else { scoped.sampler };
+    let mut all: Vec<(String, f64)> = loras.to_vec();
+    for l in scoped.loras {
+        if !all.iter().any(|(n, _)| *n == l.0) {
+            all.push(l);
+        }
+    }
+    (sampler, all, scoped.trigger)
+}
+
+/// 触发词放在提示词最前面（已经有了就不再加）
+fn with_trigger(prompt: &str, trigger: &str) -> String {
+    let t = trigger.trim();
+    if t.is_empty() || prompt.trim_start().starts_with(t) {
+        prompt.to_string()
+    } else {
+        format!("{t}\n{prompt}")
+    }
+}
+
+/// **用户挂的 H3 LoRA 的 Q/K/V 行排列**（2026-10-13 查实，挂错不报错）。
+///
+/// WeeTodd 的 MLX 引擎里 `attn.qkv_proj` 是**按头交错**的（`reshape(heads, 3, head_dim, …)`）；
+/// ComfyUI 原生 H3（`comfy/ldm/minimax/model.py`）是**连续**的 `q | k | v`（`split(heads*head_dim)`），载入时不做转换。
+/// 社区 LoRA 都是 ComfyUI 格式（键名 `diffusion_model.blocks.N.attn.qkv_proj.*`，ai-toolkit 训、在 ComfyUI 上测）。
+/// 加载器的 `auto` 对没声明排列的标准 LoRA 默认 `native_interleaved` —— 于是 Q/K/V 那部分增量被加到错的行上，
+/// MLP / out_proj 那部分是对的，所以「有点效果」而不是「完全没效果」，最难察觉。
+/// WeeTodd 自己挂它的标准适配器（VDN 默认）也是显式传 `contiguous_qkv`。
+///
+/// 判据：文件自己声明了排列（元数据 `qkv_layout` / `qkv_fusion`）→ `auto`，让加载器照声明；
+/// 键名是 ComfyUI 格式（`diffusion_model.` 开头）→ `contiguous_qkv`；读不到文件 → `auto`（不猜）
+pub(crate) fn user_lora_qkv_layout(name: &str) -> &'static str {
+    crate::cinema_sheet::loras_dir().map_or("auto", |dir| qkv_layout_for_file(&dir.join(name)))
+}
+
+pub(crate) fn qkv_layout_for_file(path: &std::path::Path) -> &'static str {
+    use std::io::Read;
+    let header = (|| {
+        let mut f = std::fs::File::open(path).ok()?;
+        let mut len = [0u8; 8];
+        f.read_exact(&mut len).ok()?;
+        let n = u64::from_le_bytes(len);
+        if n == 0 || n > 64 * 1024 * 1024 {
+            return None;
+        }
+        let mut buf = vec![0u8; n as usize];
+        f.read_exact(&mut buf).ok()?;
+        serde_json::from_slice::<Value>(&buf).ok()
+    })();
+    let Some(h) = header.as_ref().and_then(|v| v.as_object()) else { return "auto" };
+    let meta = h.get("__metadata__");
+    let declared = ["qkv_layout", "qkv_fusion"].iter().any(|k| meta.and_then(|m| m.get(*k)).and_then(|v| v.as_str()).is_some_and(|v| !v.trim().is_empty()));
+    if declared {
+        return "auto";
+    }
+    if h.keys().any(|k| k.starts_with("diffusion_model.") && k.contains(".qkv_proj.")) {
+        "contiguous_qkv"
+    } else {
+        "auto"
+    }
+}
+
+/// 建好的图里把采样方法换成指定的（节点 2 是 `WeeToddH3GenerationConfig`）。
+///
+/// **走验证预设的图这一项不生效**：`WeeToddH3ValidatedSamplingPreset.apply`
+/// 执行时 `replace(config, steps=…, sampling_method="euler")` 写死回 euler（WeeTodd nodes.py，2026-10-12 查实）。
+/// 走预设的是「精细 19 次」、原生 Ref2VA 稠密、以及 Larry 没装时退回的那几档（见 [`H3SamplingPlan::new`]）；
+/// Larry 4 / Larry 6 / LightX2V 自己挂加速 LoRA、配置取节点 2，用得上 res_multistep —— 所以这里告警，不静默
+fn set_sampler(m: &mut Map<String, Value>, sampler: H3Sampler) {
+    if sampler != H3Sampler::Euler && m.get("3").is_some_and(|n| n["class_type"] == "WeeToddH3ValidatedSamplingPreset") {
+        tracing::warn!(sampler = sampler.as_str(), "这一档走 WeeTodd 验证预设（精细 19 次 / Larry 没装时的退路），预设会把采样方法改回 euler —— 要用 {} 请选 Larry / LightX2V 档", sampler.as_str());
+    }
+    if let Some(cfg) = m.get_mut("2").and_then(|n| n.get_mut("inputs")) {
+        cfg["sampling_method"] = json!(sampler.as_str());
+    }
+}
+
 pub struct H3Params<'a> {
     pub mode: H3Mode<'a>,
     /// 接上一镜。`None` = 不接。见 [`H3Continuity`]。
@@ -1088,6 +1219,8 @@ pub struct H3Params<'a> {
     pub filename_prefix: &'a str,
     /// 额外挂的 LoRA（预设自带的 turbo 不用写在这里）。
     pub loras: &'a [(String, f64)],
+    /// 采样方法（默认 euler，见 [`H3Sampler`]）
+    pub sampler: H3Sampler,
 }
 
 /// 一次 H3 生成的**公共前缀**：组件、预览守卫、配置、预设、preflight。
@@ -1231,6 +1364,8 @@ pub struct H3ChainParams<'a> {
     pub tier: H3Tier,
     pub filename_prefix: &'a str,
     pub loras: &'a [(String, f64)],
+    /// 采样方法（默认 euler，见 [`H3Sampler`]）
+    pub sampler: H3Sampler,
 }
 
 /// 把 N 个窗口串成一条 H3 latent 链。
@@ -1263,10 +1398,12 @@ pub fn build_h3_chain_graph(p: &H3ChainParams) -> Value {
         &h3_text_encoder(&H3Mode::Reference { images: &[], pixel_budget_percent: 100, audios: &[] }),
         p.width, p.height, p.window_secs, p.seed, p.tier,
     );
+    let (sampler, loras, trigger) = effective(p.sampler, p.loras);
+    set_sampler(&mut m, sampler);
 
     // LoRA 链（和单窗口那条一样，串在预设后面）
     let mut lora_ref = lora_start(&m);
-    for (i, (name, strength)) in p.loras.iter().enumerate() {
+    for (i, (name, strength)) in loras.iter().enumerate() {
         let id = (900 + i).to_string();
         m.insert(
             id.clone(),
@@ -1274,7 +1411,7 @@ pub fn build_h3_chain_graph(p: &H3ChainParams) -> Value {
                 "WeeToddH3LoRALoader",
                 json!({
                     "lora_name": name, "strength": strength, "profile": "auto",
-                    "adaln_input_grid": "", "qkv_layout": "auto",
+                    "adaln_input_grid": "", "qkv_layout": user_lora_qkv_layout(name),
                     "start_after_evaluations": 0, "previous_loras": lora_ref
                 }),
             ),
@@ -1318,7 +1455,7 @@ pub fn build_h3_chain_graph(p: &H3ChainParams) -> Value {
         }
 
         let mut enc_in = json!({
-            "components": ["4", 0], "config": ["3", 0], "prompt": w.prompt
+            "components": ["4", 0], "config": ["3", 0], "prompt": with_trigger(w.prompt, &trigger)
         });
         if let Some(r) = prev_ref {
             enc_in["references"] = r;
@@ -1395,6 +1532,10 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
         &h3_text_encoder(&p.mode),
         p.width, p.height, p.duration_secs, p.seed, p.tier,
     );
+    let (sampler, loras, trigger) = effective(p.sampler, p.loras);
+    set_sampler(&mut m, sampler);
+    let prompt = with_trigger(p.prompt, &trigger);
+    let prompt = prompt.as_str();
     // 条件那一段按模式换。节点 5 永远是「产 conditioning 的那个」，
     // 采样器只认 `["5", 0]`，所以三种模式对采样链是透明的。
     match &p.mode {
@@ -1404,7 +1545,7 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
                 node(
                     "WeeToddH3TextEncode",
                     json!({
-                        "components": ["4", 0], "prompt": p.prompt,
+                        "components": ["4", 0], "prompt": prompt,
                         "unload_after_encode": true, "config": ["3", 0]
                     }),
                 ),
@@ -1436,7 +1577,7 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
                     "WeeToddH3KeyframeEncode",
                     json!({
                         "components": ["4", 0], "config": ["3", 0],
-                        "keyframes": ["11", 0], "prompt": p.prompt
+                        "keyframes": ["11", 0], "prompt": prompt
                     }),
                 ),
             );
@@ -1454,7 +1595,7 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
                     node(
                         "WeeToddH3TextEncode",
                         json!({
-                            "components": ["4", 0], "prompt": p.prompt,
+                            "components": ["4", 0], "prompt": prompt,
                             "unload_after_encode": true, "config": ["3", 0]
                         }),
                     ),
@@ -1525,7 +1666,7 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
                         "WeeToddH3ReferenceEncode",
                         json!({
                             "components": ["4", 0], "config": ["3", 0],
-                            "references": refs, "prompt": p.prompt
+                            "references": refs, "prompt": prompt
                         }),
                     ),
                 );
@@ -1535,7 +1676,7 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
 
     // 额外 LoRA 串在预设那条链后面。`previous_loras` 就是给串联用的。
     let mut lora_ref = lora_start(&m);
-    for (i, (name, strength)) in p.loras.iter().enumerate() {
+    for (i, (name, strength)) in loras.iter().enumerate() {
         let id = (900 + i).to_string();
         m.insert(
             id.clone(),
@@ -1543,7 +1684,7 @@ pub fn build_h3_graph(p: &H3Params) -> Value {
                 "WeeToddH3LoRALoader",
                 json!({
                     "lora_name": name, "strength": strength, "profile": "auto",
-                    "adaln_input_grid": "", "qkv_layout": "auto",
+                    "adaln_input_grid": "", "qkv_layout": user_lora_qkv_layout(name),
                     "start_after_evaluations": 0, "previous_loras": lora_ref
                 }),
             ),
@@ -1726,7 +1867,7 @@ fn 导出窗口链的图供实跑() {
         .unwrap_or_else(|_| vec!["w1".into(), "w2".into(), "w3".into()]);
     let imgs: Vec<String> = std::env::var("H3_CHAIN_IMAGE").map(|v| vec![v]).unwrap_or_default();
     let ws: Vec<H3Window> = prompts.iter().map(|p| H3Window { prompt: p, images: &imgs }).collect();
-    let g = build_h3_chain_graph(&H3ChainParams {
+    let g = build_h3_chain_graph(&H3ChainParams { sampler: Default::default(),
         windows: &ws,
         window_secs: std::env::var("H3_CHAIN_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(3.0),
         context_frames: std::env::var("H3_CHAIN_FRAMES").ok().and_then(|v| v.parse().ok()).unwrap_or(22),
@@ -2049,7 +2190,7 @@ mod tests {
                 let f = img.as_deref();
                 H3Mode::Frames { first: f, last: h3_end.as_deref() }
             } else { H3Mode::Text };
-            build_h3_graph(&H3Params {
+            build_h3_graph(&H3Params { sampler: Default::default(),
                 continuity: None,
                 mode,
                 prompt: &prompt, width: w, height: h, duration_secs: secs,
@@ -2094,7 +2235,7 @@ mod tests {
         let first = std::env::var("ANIMA_H3_FIRST").ok().filter(|v| !v.is_empty());
         let secs: f64 = std::env::var("ANIMA_H3_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(5.0);
         let seed: u64 = std::env::var("ANIMA_H3_SEED").ok().and_then(|v| v.parse().ok()).unwrap_or(771_231);
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None,
             mode: match first.as_deref() { Some(f) => H3Mode::Frames { first: Some(f), last: None }, None => H3Mode::Text },
             prompt: &std::env::var("ANIMA_H3_PROMPT").unwrap_or_else(|_| {
@@ -2150,12 +2291,77 @@ mod tests {
     }
 
     fn h3(tier: H3Tier, loras: &[(String, f64)]) -> H3Params<'_> {
-        H3Params {
+        H3Params { sampler: Default::default(),
             continuity: None,
             mode: H3Mode::Text,
             prompt: "一位女理发师停下剪刀",
             width: 768, height: 512, duration_secs: 5.0, seed: 771_231,
             tier, filename_prefix: "Anima/H3", loras,
+        }
+    }
+
+    /// 采样方法和额外 LoRA（10-12 打斗 LoRA）：默认 euler；参数给的优先；分镜出片的作用域里的接在后面、同名不重复挂
+    #[tokio::test]
+    async fn 采样方法和作用域里的额外_lora() {
+        let lightx = |g: &Value| g["2"]["inputs"]["sampling_method"].as_str().map(String::from);
+        let none: Vec<(String, f64)> = vec![];
+        assert_eq!(lightx(&build_h3_graph(&h3(H3Tier::LightX2V, &none))).as_deref(), Some("euler"));
+        let mut p = h3(H3Tier::LightX2V, &none);
+        p.sampler = H3Sampler::ResMultistep;
+        assert_eq!(lightx(&build_h3_graph(&p)).as_deref(), Some("res_multistep"));
+        // 作用域：采样方法 + 两个战斗 LoRA；参数里已有 Combat 就不重复挂
+        let own = vec![("h3-combat/H3_Combat_V2.safetensors".to_string(), 0.7)];
+        let extras = H3Extras { sampler: H3Sampler::ResMultistep, loras: vec![("h3-combat/H3_Combat_V2.safetensors".into(), 0.5), ("h3-combat/H3_Fight_Flow_V1.safetensors".into(), 0.65)], trigger: "Melee weapon interaction.".into() };
+        let g = with_extras(extras, async { build_h3_graph(&h3(H3Tier::LightX2V, &own)) }).await;
+        assert_eq!(lightx(&g).as_deref(), Some("res_multistep"));
+        let names: Vec<(String, f64)> = g.as_object().unwrap().values()
+            .filter(|n| n["class_type"] == "WeeToddH3LoRALoader" && n["inputs"]["profile"] == "auto")
+            .map(|n| (n["inputs"]["lora_name"].as_str().unwrap().to_string(), n["inputs"]["strength"].as_f64().unwrap())).collect();
+        assert_eq!(names.len(), 2, "{names:?}");
+        assert!(names.contains(&("h3-combat/H3_Combat_V2.safetensors".into(), 0.7)), "参数里的强度优先：{names:?}");
+        assert!(names.contains(&("h3-combat/H3_Fight_Flow_V1.safetensors".into(), 0.65)));
+        // 触发词进了发给 H3 的提示词最前面
+        let enc = g.as_object().unwrap().values().find(|n| n["inputs"]["prompt"].is_string()).unwrap();
+        assert!(enc["inputs"]["prompt"].as_str().unwrap().starts_with("Melee weapon interaction.\n一位女理发师"), "{}", enc["inputs"]["prompt"]);
+        // 作用域外不带
+        assert_eq!(lightx(&build_h3_graph(&h3(H3Tier::LightX2V, &none))).as_deref(), Some("euler"));
+        // **哪几档真生效**：Larry 6（参考出片默认）不经过预设，采样读节点 2；精细 19 次走验证预设 —— 预设执行时写死回 euler
+        let preset_of = |g: &Value| g.as_object().unwrap().values().any(|n| n["class_type"] == "WeeToddH3ValidatedSamplingPreset");
+        let mut staged = h3(H3Tier::Staged, &none);
+        staged.sampler = H3Sampler::ResMultistep;
+        let g = build_h3_graph(&staged);
+        assert!(!preset_of(&g) && lightx(&g).as_deref() == Some("res_multistep"), "Larry 6 应该不经过预设");
+        let mut dense = h3(H3Tier::Dense, &none);
+        dense.sampler = H3Sampler::ResMultistep;
+        assert!(preset_of(&build_h3_graph(&dense)), "精细档走预设（所以只能告警）");
+    }
+
+    /// ComfyUI 格式的 LoRA 要按连续排列拆 Q/K/V；文件自己声明了就照声明；读不到不猜
+    #[test]
+    fn 用户_lora_的_qkv_排列() {
+        let dir = tempfile::tempdir().unwrap();
+        let write = |name: &str, header: Value| {
+            let h = serde_json::to_vec(&header).unwrap();
+            let mut bytes = (h.len() as u64).to_le_bytes().to_vec();
+            bytes.extend(h);
+            let p = dir.path().join(name);
+            std::fs::write(&p, bytes).unwrap();
+            p
+        };
+        let t = json!({"dtype": "BF16", "shape": [16, 5376], "data_offsets": [0, 0]});
+        let comfy = write("c.safetensors", json!({"__metadata__": {"ss_base_model_version": "minimax_h3"}, "diffusion_model.blocks.0.attn.qkv_proj.lora_A.weight": t}));
+        assert_eq!(qkv_layout_for_file(&comfy), "contiguous_qkv");
+        let declared = write("d.safetensors", json!({"__metadata__": {"qkv_layout": "native_interleaved"}, "diffusion_model.blocks.0.attn.qkv_proj.lora_A.weight": t}));
+        assert_eq!(qkv_layout_for_file(&declared), "auto", "声明了就交给加载器照声明");
+        let no_qkv = write("n.safetensors", json!({"diffusion_model.blocks.0.mlp.fc1.lora_A.weight": t}));
+        assert_eq!(qkv_layout_for_file(&no_qkv), "auto");
+        assert_eq!(qkv_layout_for_file(&dir.path().join("不存在.safetensors")), "auto");
+        // 本机的战斗 LoRA（有就核，没有不算失败）
+        if let Some(d) = crate::cinema_sheet::loras_dir() {
+            let p = d.join("h3-combat/H3_Combat_V2.safetensors");
+            if p.is_file() {
+                assert_eq!(qkv_layout_for_file(&p), "contiguous_qkv");
+            }
         }
     }
 
@@ -2367,7 +2573,7 @@ mod tests {
     #[test]
     fn 首末帧各挑各的条件节点() {
         let kind = |first, last| {
-            let g = build_h3_graph(&H3Params {
+            let g = build_h3_graph(&H3Params { sampler: Default::default(),
                 continuity: None,
                 mode: H3Mode::Frames { first, last },
                 prompt: "x", width: 640, height: 384, duration_secs: 3.0,
@@ -2405,7 +2611,7 @@ mod tests {
             H3Mode::Frames { first: None, last: Some("z.png") },
             H3Mode::Frames { first: Some("a.png"), last: Some("z.png") },
         ] {
-            let g = build_h3_graph(&H3Params {
+            let g = build_h3_graph(&H3Params { sampler: Default::default(),
                 continuity: None,
                 mode: m, prompt: "x", width: 640, height: 384, duration_secs: 3.0,
                 seed: 1, tier: H3Tier::Preview, filename_prefix: "p", loras: &[],
@@ -2436,7 +2642,7 @@ mod tests {
     #[test]
     fn 建图真的按模式填了编码器() {
         let g = |mode| {
-            build_h3_graph(&H3Params {
+            build_h3_graph(&H3Params { sampler: Default::default(),
                 continuity: None,
                 mode, prompt: "x", width: 640, height: 384, duration_secs: 3.0,
                 seed: 1, tier: H3Tier::Preview, filename_prefix: "p", loras: &[],
@@ -2499,7 +2705,7 @@ mod tests {
             ("i2v", H3Mode::Frames { first: Some("src.png"), last: None }),
             ("r2v", H3Mode::Reference { images: &refs, pixel_budget_percent: 100, audios: &[] }),
         ] {
-            let g = build_h3_graph(&H3Params {
+            let g = build_h3_graph(&H3Params { sampler: Default::default(),
                 continuity: None,
                 mode, prompt: "x", width: 768, height: 512, duration_secs: 5.0,
                 seed: 1, tier: H3Tier::Standard, filename_prefix: "p", loras: &[],
@@ -2520,7 +2726,7 @@ mod tests {
     fn 参考音频串在图片之后() {
         let imgs = vec!["a.png".to_string(), "b.png".to_string()];
         let auds: Vec<String> = (0..5).map(|i| format!("song{i}.wav")).collect();
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None,
             mode: H3Mode::Reference { images: &imgs, pixel_budget_percent: 100, audios: &auds },
             prompt: "x", width: 768, height: 512, duration_secs: 15.0, seed: 1,
@@ -2535,7 +2741,7 @@ mod tests {
         assert_eq!(g["5"]["inputs"]["references"], json!(["65", 0]), "编码器没吃到音频");
         assert!(graph_pipeline(&g).unwrap().ends_with("参考音频 3 段"));
         // 没音频时和以前一模一样
-        let g0 = build_h3_graph(&H3Params {
+        let g0 = build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None,
             mode: H3Mode::Reference { images: &imgs, pixel_budget_percent: 100, audios: &[] },
             prompt: "x", width: 768, height: 512, duration_secs: 5.0, seed: 1,
@@ -2594,7 +2800,7 @@ mod tests {
     #[test]
     fn 链路说明从图里读() {
         let refs = vec!["a.png".to_string()];
-        let g = |mode, tier| build_h3_graph(&H3Params {
+        let g = |mode, tier| build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None, mode, prompt: "x", width: 768, height: 512, duration_secs: 5.0,
             seed: 1, tier, filename_prefix: "p", loras: &[],
         });
@@ -2617,7 +2823,7 @@ mod tests {
     /// i2v：首帧要经过 `FirstFrame` 转成 keyframes，不能直接喂给编码器。
     #[test]
     fn 首帧走keyframe那条链() {
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None,
             mode: H3Mode::Frames { first: Some("src.png"), last: None }, prompt: "x",
             width: 768, height: 512, duration_secs: 5.0, seed: 1,
@@ -2641,7 +2847,7 @@ mod tests {
     #[test]
     fn 参考图串成链且切到ref2va分区() {
         let refs = vec!["a.png".to_string(), "b.png".to_string(), "c.png".to_string()];
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None,
             mode: H3Mode::Reference { images: &refs, pixel_budget_percent: 80, audios: &[] },
             prompt: "x", width: 768, height: 512, duration_secs: 5.0, seed: 1,
@@ -2664,7 +2870,7 @@ mod tests {
     #[test]
     fn 接上一镜时视频参考串在图片之后() {
         let imgs = vec!["a.png".to_string(), "b.png".to_string()];
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             mode: H3Mode::Reference { images: &imgs, pixel_budget_percent: 100, audios: &[] },
             continuity: Some(H3Continuity {
                 video_path: "/tmp/prev.mp4", start_secs: 14.0, frames: 24, fps: 24.0,
@@ -2696,7 +2902,7 @@ mod tests {
     fn 三窗口链的每一条边都接对了() {
         static A: [String; 1] = [String::new()];
         let ws = [窗口("w1", &A), 窗口("w2", &A), 窗口("w3", &A)];
-        let g = build_h3_chain_graph(&H3ChainParams {
+        let g = build_h3_chain_graph(&H3ChainParams { sampler: Default::default(),
             windows: &ws, window_secs: 15.0, context_frames: 22,
             width: 576, height: 1024, seed: 7, tier: H3Tier::Standard,
             filename_prefix: "t", loras: &[],
@@ -2738,7 +2944,7 @@ mod tests {
     fn 配置里的时长是单个窗口的() {
         static A: [String; 1] = [String::new()];
         let ws = [窗口("a", &A), 窗口("b", &A), 窗口("c", &A), 窗口("d", &A)];
-        let g = build_h3_chain_graph(&H3ChainParams {
+        let g = build_h3_chain_graph(&H3ChainParams { sampler: Default::default(),
             windows: &ws, window_secs: 15.0, context_frames: 22,
             width: 576, height: 1024, seed: 1, tier: H3Tier::Standard,
             filename_prefix: "t", loras: &[],
@@ -2753,7 +2959,7 @@ mod tests {
     #[test]
     fn 不接上一镜时没有视频参考节点() {
         let imgs = vec!["a.png".to_string()];
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             mode: H3Mode::Reference { images: &imgs, pixel_budget_percent: 100, audios: &[] },
             continuity: None,
             prompt: "x", width: 576, height: 1024, duration_secs: 5.0, seed: 1,
@@ -2770,7 +2976,7 @@ mod tests {
     #[test]
     fn 参考图为空时退回文本() {
         let empty: Vec<String> = vec![];
-        let g = build_h3_graph(&H3Params {
+        let g = build_h3_graph(&H3Params { sampler: Default::default(),
             continuity: None,
             mode: H3Mode::Reference { images: &empty, pixel_budget_percent: 100, audios: &[] },
             prompt: "x", width: 768, height: 512, duration_secs: 5.0, seed: 1,

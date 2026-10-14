@@ -248,8 +248,9 @@ export function aggregateNodeInputs(
       visitedPrompt.add(srcId);
       const srcNode = nodes.find((n) => n.id === srcId);
       if (!srcNode) continue;
-      // imageGen 与 videoGen 节点为媒体生成资产边界，其自身及更上游用于画图的提示词不应作为下游提示词下发
-      if (srcNode.type === "imageGen" || srcNode.type === "videoGen") {
+      // imageGen 与 videoGen 节点为媒体生成资产边界，其自身及更上游用于画图的提示词不应作为下游提示词下发。
+      // **音频节点也是边界**（2026-10-13）：试音色连到视频节点当参考音频时，它上游那段台词是念的词，不是画面描述
+      if (srcNode.type === "imageGen" || srcNode.type === "videoGen" || srcNode.type === "audio" || srcNode.type === "audioClip") {
         continue;
       }
       promptSourceNodeIds.add(srcId);
@@ -689,6 +690,8 @@ async function executeSingleNodeInternal(nodeId: string, projectId: string | nul
           generateAudio: data.generateAudio !== false,
           // 窗口链一律是参考（Ref2VA）—— 按参考那组档位取
           h3Quality: effectiveQuality(data.h3Quality as string | undefined, "r2v"),
+          h3Sampling: (data.h3Sampling as string | undefined) || undefined,
+          seed: typeof data.seed === "number" && data.seed > 0 ? data.seed : undefined,
           loras: picks,
         }));
         updateNodeData(nodeId, {
@@ -781,7 +784,7 @@ async function executeSingleNodeInternal(nodeId: string, projectId: string | nul
       // 非 r2v 模式没有 <Picture> 槽位，编译成角色名本身（去掉 @ 记号）。
       // 参考音频（音频素材节点直接连着的）。**先编译音频的 @** —— 下一步会把对不上图片的 @名字 摘掉
       const audioRefs = videoInputAudios(nodeId, nodes, edges);
-      if (emptyUpstreamAudios(nodeId, nodes, edges)) throw new Error("连着的音频素材节点还没放音频 —— 先在它上面上传一段");
+      if (emptyUpstreamAudios(nodeId, nodes, edges)) throw new Error("连着的音频节点还没有音频 —— 音频素材先上传一段，试音色先点生成念一遍");
       if (audioRefs.length && mode !== "r2v") throw new Error("参考音频只有参考生视频（H3）能用 —— 把模式改回「跟着连线走」");
       if (audioRefs.length > MAX_VIDEO_AUDIOS) throw new Error(`H3 一次最多 ${MAX_VIDEO_AUDIOS} 段参考音频，现在连了 ${audioRefs.length} 段`);
       const audios = audioRefs.map((a) => a.path);
@@ -862,6 +865,9 @@ async function executeSingleNodeInternal(nodeId: string, projectId: string | nul
             h3_official_format: Boolean(data.h3OfficialFormat),
             // 加速档：节点选的，没选按链路默认（见 utils/h3Quality）。只 H3
             ...(engine === "h3" && effectiveQuality(data.h3Quality, mode) ? { h3_quality: effectiveQuality(data.h3Quality, mode) } : {}),
+            ...(engine === "h3" && data.h3Sampling ? { h3_sampling: data.h3Sampling } : {}),
+            // 节点上写了 seed 就照用（A/B 对照、复现某一次实跑全靠它）；一次出几条时每条错开
+            ...(typeof data.seed === "number" && data.seed > 0 ? { seed: data.seed + i * 7 } : {}),
             images: mode === "r2v" ? references : mode === "fl2v" ? endpoints : mode === "i2v" && inputPath ? [inputPath] : [],
             ...(audios.length ? { audios } : {}),
           }));

@@ -566,6 +566,21 @@ describe("DAG 执行器 (dagExecutor)", () => {
       expect(studioGenerate).toHaveBeenCalledWith(expect.objectContaining({ mode: "r2v", engine: "h3", images: ["/ref0.png", "/ref1.png", "/ref2.png", "/ref3.png"] }));
     });
 
+    // 2026-10-12：画布视频节点以前不传 seed —— 模板里写死的 seed（A/B 对照的前提）被丢掉、每次随机
+    it("节点上的 seed 和采样方法照发；seed 为 0 不发", async () => {
+      const id = referenceGraph(2);
+      useCanvasStore.getState().updateNodeData(id, { prompt: "p", seed: 20261012, h3Sampling: "res_multistep" });
+      vi.mocked(studioGenerate).mockResolvedValue({ ok: true, path: "/out.mp4", message: "ok", notes: [] });
+      await executeNodePipeline(id);
+      expect(studioGenerate).toHaveBeenCalledWith(expect.objectContaining({ seed: 20261012, h3_sampling: "res_multistep" }));
+      vi.mocked(studioGenerate).mockClear();
+      useCanvasStore.getState().updateNodeData(id, { seed: 0, h3Sampling: undefined, lastExecutedSignature: undefined, outputVideoUrl: undefined });
+      await executeNodePipeline(id);
+      const arg = vi.mocked(studioGenerate).mock.calls[0][0];
+      expect(arg.seed).toBeUndefined();
+      expect(arg.h3_sampling).toBeUndefined();
+    });
+
     // 2026-10-11：长镜头节点点「生成」以前按空提示词出单条（H3 跑 50 分钟出一条参考图陈列）；
     // 面板上另有「整段出片」—— 用户：「生成按钮就是生成按钮」。现在「生成」直接出整条
     describe("长镜头节点点生成", () => {
@@ -587,6 +602,7 @@ describe("DAG 执行器 (dagExecutor)", () => {
         expect(arg.windows.map((w) => w.prompt)).toEqual(["窗口一的提示词", "窗口二的提示词"]);
         for (const w of arg.windows) expect(w.images).toEqual(["/ref0.png", "/ref1.png", "/ref2.png", "/ref3.png"]);
         expect(arg).toMatchObject({ windowSecs: 15, width: 960, height: 544, h3Quality: "lightx2v" });
+        expect(arg.seed).toBeUndefined();
         const data = useCanvasStore.getState().nodes.find((n) => n.id === id)!.data;
         // 播放器、超分、收进分镜只认 outputVideoUrl；lastRun 记「当时到底发了什么」
         expect(data.outputVideoUrl).toBe("/ops/longtake_x.mp4");

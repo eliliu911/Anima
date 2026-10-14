@@ -35,6 +35,20 @@ export interface RenderSettings {
   takes: number;
   generate_audio: boolean;
   burn_subtitles: boolean;
+  /** H3 采样方法。不写 = euler；Combat 类 LoRA 作者推荐 res_multistep */
+  sampling?: H3Sampling;
+  /** 战斗 LoRA 预设：打斗镜按动作类型（`StoryboardShot.combat_style`）挂。键是动作类型 id。没配 = 不挂 */
+  combat?: Record<string, CombatPreset>;
+}
+
+export type H3Sampling = "euler" | "res_multistep";
+
+/** 一种打斗类型挂的 LoRA + 触发词。见 Rust `combat::CombatPreset` */
+export interface CombatPreset {
+  /** `name` 是 ComfyUI 枚举里的完整名（含子目录，如 `h3-combat/H3_Combat_V2.safetensors`） */
+  loras: { name: string; strength: number }[];
+  /** 加在发给 H3 的提示词最前面；空 = 不加 */
+  trigger?: string;
 }
 
 /** 提示词线路：A 中文结构（纯填空），B H3 官方六段（多一次 AI 整理）。两条物理隔离。 */
@@ -57,7 +71,61 @@ export interface ShotSegment {
   camera?: string;
   /** 声音 */
   sound?: string;
+  /** 表演合同（Rust `shot_table::Performance`）：说之前、说的时候、说完后观众看得见什么。没有就不写 */
+  performance?: Performance;
+  /** 攻防交换（Rust `shot_table::Exchange`）：打斗镜的这一段，一段最多一个 */
+  exchange?: Exchange;
 }
+
+/** 表演合同。每段可见信号 2~4 个；远景不写面部；汗 / 水 / 泪 / 灰要有来源、运动、光 */
+export interface Performance {
+  performer?: string;
+  /** 触发：听见 / 看见 / 受了什么力 */
+  trigger?: string;
+  /** 视线从哪到哪 */
+  gaze?: string;
+  /** 面部信号，最多 2 个 */
+  face?: string[];
+  /** 呼吸 / 身体，最多 2 个 */
+  body?: string[];
+  /** 手实际在做什么 */
+  hand?: string;
+  material?: MaterialEvent;
+  /** 之后留下的状态（进下一段） */
+  aftermath?: string;
+  /** 什么景别 / 焦点 / 停留能拍到 */
+  camera_proof?: string;
+}
+
+export interface MaterialEvent {
+  source?: string;
+  motion?: string;
+  light?: string;
+}
+
+/** 一次攻防交换：开场站位 → 意图 → 攻击路径 → 防守 → 结果 → 新站位 → 镜头与音效 */
+export interface Exchange {
+  attacker?: string;
+  opening?: string;
+  intent?: string;
+  attack?: string;
+  defense?: string;
+  result?: string;
+  new_state?: string;
+  camera_sound?: string;
+  /** 接触那一刻（本镜内的秒），FCPX 导出按它打冲击帧标记 */
+  contact_at?: number;
+}
+
+/** 打斗镜的动作类型；空 = 不是打斗镜 */
+export type CombatStyle = "" | "unarmed" | "melee" | "gunfu" | "energy" | "xianxia";
+export const COMBAT_STYLES: { id: Exclude<CombatStyle, "">; label: string }[] = [
+  { id: "unarmed", label: "徒手" },
+  { id: "melee", label: "冷兵器" },
+  { id: "gunfu", label: "枪斗" },
+  { id: "energy", label: "能量武器" },
+  { id: "xianxia", label: "仙侠" },
+];
 
 /** 画面里要交代的场景和道具，带尺寸和摆放 */
 export interface SceneItem {
@@ -296,6 +364,8 @@ export interface StoryboardShot {
    * 建议、按场出首帧、接上一镜都照它（Rust `shot_route::content_route`）。实际走哪条仍看有没有首帧
    */
   route_choice?: ShotRoute;
+  /** 打斗镜的动作类型（Rust `combat_style`）；空 = 不是打斗镜 */
+  combat_style?: CombatStyle;
   prompt: string;
   /** 第几场（从 1 开始），生成镜头表时由分场结果写入 */
   scene_no?: number;

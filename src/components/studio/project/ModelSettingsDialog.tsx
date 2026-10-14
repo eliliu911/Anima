@@ -7,6 +7,7 @@ import {
 } from "../../../api/cinema";
 import { studioCapabilities, type CapabilityCatalog } from "../../../api/studio";
 import { DEFAULT_RENDER } from "../storyboard/renderOptions";
+import { CombatPresetEditor } from "./CombatPresetEditor";
 
 /**
  * 生成设置。项目级，管「用哪个引擎、各类资产什么画幅」。
@@ -189,6 +190,25 @@ export function ModelSettingsDialog({
                   value={draft.video_engine}
                   onPick={(id) => set("video_engine", id)}
                 />
+              </Section>
+
+              {/* 采样方法 + 战斗 LoRA 预设：只 H3。打斗镜（镜头详情里选了打斗类型）才挂预设 */}
+              <Section title="H3 采样与打斗" hint="采样方法整个项目统一；战斗 LoRA 只挂在选了打斗类型的镜头上">
+                <div className="mb-2 grid grid-cols-2 gap-2">
+                  <Toggle
+                    on={(render.sampling ?? "euler") === "euler"}
+                    onClick={() => setRender("sampling", undefined)}
+                    label="Euler"
+                    hint="默认"
+                  />
+                  <Toggle
+                    on={render.sampling === "res_multistep"}
+                    onClick={() => setRender("sampling", "res_multistep")}
+                    label="RES 多步"
+                    hint="Combat 类 LoRA 作者推荐；精细档不生效"
+                  />
+                </div>
+                <CombatPresetEditor value={render.combat} onChange={(next) => setRender("combat", next)} />
               </Section>
 
               {/* **硬字幕是出片时烧进画面的，事后改不了。**
