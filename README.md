@@ -219,6 +219,15 @@ npm run build                              # type check + frontend build
 
 Live tests against real services are `#[ignore]` by default and need the services running locally.
 
+## For AI agents (Claude Code / Codex)
+
+Hand this link to your agent and ask it to install it:
+
+- Skill: [`agent-skills/anima/SKILL.md`](https://github.com/eliliu911/Anima/blob/main/agent-skills/anima/SKILL.md) (raw: https://raw.githubusercontent.com/eliliu911/Anima/main/agent-skills/anima/SKILL.md)
+
+It walks the agent through building `anima-mcp` (a stdio MCP server) → registering it with `claude mcp add` / `codex mcp add` → installing the file as a skill → verifying.
+Once installed the agent can create projects, import scripts, build assets, generate shot tables, synthesize prompts, render and stitch episodes. Shell, file access and the private memory store are not exposed.
+
 ## Layout
 
 ```

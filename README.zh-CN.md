@@ -218,6 +218,15 @@ npm run build                              # 类型检查 + 前端构建
 
 打真实服务的联调测试默认 `#[ignore]`，需要本机服务在跑。
 
+## 给 AI Agent 用（Claude Code / Codex）
+
+把这个链接交给 Agent，让它照着装：
+
+- 技能：[`agent-skills/anima/SKILL.md`](https://github.com/eliliu911/Anima/blob/main/agent-skills/anima/SKILL.md)（纯文本：https://raw.githubusercontent.com/eliliu911/Anima/main/agent-skills/anima/SKILL.md）
+
+里面有完整步骤：编译 `anima-mcp`（stdio MCP 服务端）→ `claude mcp add` / `codex mcp add` 接上 → 把这份文件装成技能 → 验证。
+装好之后 Agent 能建项目、导剧本、建资产、出分镜、合成提示词、出片、拼接成集；不暴露 shell、文件读写和私人记忆库。
+
 ## 目录
 
 ```
